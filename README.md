@@ -28,9 +28,9 @@ The page remembers the viewer's last choice.
 
 ## Fonts
 - Rubik comes from Google Fonts.
-- **PP Neue Corp (Normal Ultrabold)** is used for the headline, top-3 names and badges. It's a paid font from
-  Pangram Pangram. Put the licensed `PPNeueCorp-NormalUltrabold.woff2` file in `fonts/` and the page uses it
-  automatically. Until then, variable Archivo (sized to match) is used in its place.
+- **PP Neue Corp (Normal Ultrabold)**, from Pangram Pangram, is used for the headline, top-3 names and badges.
+  It's served from `fonts/PPNeueCorp-NormalUltrabold.woff2`. If that file is missing, variable Archivo
+  (sized to match) is used in its place.
 - The "RekoJ" wordmark uses Bomber Escort. It's exported from Figma as outlined SVG
   (`assets/shared/rekoj-wordmark.svg`), so no font license is needed.
 

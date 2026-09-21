@@ -269,9 +269,9 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--display);
   font-weight: 800;
 }
-.title__pool { top: -1px; font-size: 56px; line-height: 85px; }
+.title__pool { top: 0; font-size: 56px; line-height: 85px; }
 .title__lb {
-  top: 49.65px;
+  top: 48.15px;
   font-size: 70px;
   line-height: 106px;
   background: var(--brand-grad);

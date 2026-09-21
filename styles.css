@@ -3,7 +3,8 @@
    "PP Neue Corp" (Pangram Pangram) is the display font used in the
    Figma file. It's a commercial font — drop the licensed file at
    fonts/PPNeueCorp-NormalUltrabold.woff2 and it's used automatically.
-   Until then, Archivo Black stands in.
+   Until then, variable Archivo (900 weight, 86% width) stands in,
+   sized to match its letter height and line widths.
    ------------------------------------------------------------------ */
 @font-face {
   font-family: "PP Neue Corp";
@@ -14,11 +15,12 @@
 }
 @font-face {
   font-family: "Neue Corp Fallback";
-  src: url("fonts/ArchivoBlack.woff2") format("woff2");
-  font-weight: 800;
+  src: url("fonts/Archivo-Variable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-stretch: 62% 125%;
   font-style: normal;
   font-display: swap;
-  size-adjust: 88%;
+  size-adjust: 103.5%;
 }
 
 /* ------------------------------------------------------------------
@@ -32,7 +34,7 @@
   --muted: #6d7a96;
   --text: #d7dbe4;
   --num: #d0cfcb;
-  --display: "PP Neue Corp", "Neue Corp Fallback", "Archivo Black", sans-serif;
+  --display: "PP Neue Corp", "Neue Corp Fallback", sans-serif;
   --body: "Rubik", system-ui, sans-serif;
 }
 
@@ -55,6 +57,13 @@ body[data-board="razedio"] {
   --visit-logo-h: 14px;
   --visit-gap: 6px;
   --bg-top: 53px;
+}
+
+/* Everything set in the display face. font-stretch only affects the
+   Archivo fallback; PP Neue Corp has a single width and ignores it. */
+body :is(.title__pool, .title__lb, .card__place, .card__name, .th__dollar, .legal__title) {
+  font-weight: 900;
+  font-stretch: 86%;
 }
 
 /* ------------------------------------------------------------------
@@ -260,9 +269,9 @@ a { color: inherit; text-decoration: none; }
   font-family: var(--display);
   font-weight: 800;
 }
-.title__pool { top: 0; font-size: 56px; line-height: 85px; }
+.title__pool { top: -1px; font-size: 56px; line-height: 85px; }
 .title__lb {
-  top: 48.15px;
+  top: 49.65px;
   font-size: 70px;
   line-height: 106px;
   background: var(--brand-grad);

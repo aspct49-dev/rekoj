@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RekoJ | Monthly Leaderboard</title>
+  <meta name="description" content="Compete against other players under code REKOJ and win big rewards!" />
+  <link rel="icon" type="image/png" href="assets/shared/rekoj-logo.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body data-board="razed">
+  <div class="page">
+    <!-- Top bar -->
+    <header class="topbar">
+      <div class="topbar__inner">
+        <a class="brand" href="./" aria-label="RekoJ home">
+          <img class="brand__logo" src="assets/shared/rekoj-logo.png" alt="" width="54" height="38" />
+          <img class="brand__wordmark" src="assets/shared/rekoj-wordmark.svg" alt="RekoJ" width="146" height="22" />
+        </a>
+
+        <a class="btn btn--dark nav-lb" href="#leaderboard">
+          <img src="assets/shared/trophy-nav.svg" alt="" width="20" height="20" />
+          <span>LEADERBOARD</span>
+        </a>
+
+        <a class="btn nav-visit" href="https://www.razed.com/" target="_blank" rel="noopener" data-visit="razed">
+          <span>VISIT</span>
+          <img class="nav-visit__logo" src="assets/shared/razed-logo-dark-sm.png" alt="Razed" width="61" height="12" />
+        </a>
+      </div>
+    </header>
+
+    <!-- Hero background -->
+    <div class="hero-bg" aria-hidden="true">
+      <img id="heroBg" src="assets/razed/bg.jpg" alt="" />
+    </div>
+
+    <main class="main" id="leaderboard">
+      <div class="board" id="board">
+        <!-- Title -->
+        <section class="title">
+          <div class="picker" role="tablist" aria-label="Choose leaderboard">
+            <button class="picker__btn" role="tab" type="button" data-board="razed" aria-selected="true">
+              <span class="picker__logo picker__logo--razed"><img src="assets/shared/razed-logo.png" alt="Razed" /></span>
+            </button>
+            <button class="picker__btn" role="tab" type="button" data-board="razedio" aria-selected="false">
+              <span class="picker__logo picker__logo--razedio"><img src="assets/shared/razedio-logo.png" alt="Razed.IO" /></span>
+            </button>
+          </div>
+
+          <div class="title__text">
+            <p class="title__pool"><span class="title__amount" id="prizePool">$5,000</span> <span class="title__monthly">MONTHLY</span></p>
+            <h1 class="title__lb">LEADERBOARD</h1>
+            <p class="title__sub">Compete against other players under code <span class="accent" data-code>REKOJ</span> and win big rewards!</p>
+          </div>
+
+          <div class="title__actions">
+            <button class="btn btn--dark code-btn" type="button" id="copyCode" aria-label="Copy code REKOJ">
+              <img src="assets/shared/clipboard.svg" alt="" width="17" height="18" />
+              <span>CODE: <span class="accent" data-code>REKOJ</span></span>
+            </button>
+            <a class="btn visit-btn" id="visitBtn" href="https://www.razed.com/" target="_blank" rel="noopener">
+              <span>VISIT</span>
+              <img class="visit-btn__logo" id="visitLogo" src="assets/razed/visit-logo-dark.png" alt="Razed" />
+            </a>
+          </div>
+
+          <div class="symbol symbol--left" aria-hidden="true"><img id="symbolLeft" src="assets/razed/symbol-left.png" alt="" /></div>
+          <div class="symbol symbol--right" aria-hidden="true"><img id="symbolRight" src="assets/razed/symbol-right.png" alt="" /></div>
+        </section>
+
+        <!-- Top 3 -->
+        <section class="podium" id="podium" aria-label="Top 3"></section>
+
+        <!-- Countdown -->
+        <section class="timer" aria-live="off">
+          <div class="timer__label">LEADERBOARD ENDS IN</div>
+          <p class="timer__value" id="countdown"><b data-t="d">00</b> DAYS  <b data-t="h">00</b> HOURS  <b data-t="m">00</b> MINUTES  <b data-t="s">00</b> SECONDS</p>
+        </section>
+
+        <!-- Places 4-10 -->
+        <section class="table" aria-label="Places 4 to 10">
+          <div class="table__head">
+            <span class="th"><img id="iconPlace" src="assets/razed/icon-place.svg" alt="" width="14" height="14" />Place</span>
+            <span class="th"><img id="iconUser" src="assets/razed/icon-user.svg" alt="" width="13" height="14" />User</span>
+            <span class="th th--wagered"><span class="th__dollar">$</span>Wagered</span>
+            <span class="th th--reward"><img id="iconGift" src="assets/razed/icon-gift.svg" alt="" width="14" height="14" />Reward</span>
+          </div>
+          <ol class="table__rows" id="rows"></ol>
+        </section>
+      </div>
+    </main>
+
+  <footer class="footer">
+    <div class="footer__wrap">
+      <div class="footer__top">
+        <div class="footer__brand">
+          <a class="brand" href="index.html" aria-label="RekoJ home">
+            <img class="brand__logo" src="assets/shared/rekoj-logo.png" alt="" width="54" height="38" />
+            <img class="brand__wordmark" src="assets/shared/rekoj-wordmark.svg" alt="RekoJ" width="146" height="22" />
+          </a>
+
+          <div class="footer__marks">
+            <span class="footer__age">18+</span>
+            <a href="https://www.begambleaware.org" target="_blank" rel="noopener">
+              <img class="footer__aware" src="assets/shared/gambleaware.png" alt="BeGambleAware" width="163" height="24" />
+            </a>
+          </div>
+
+          <p class="footer__note">
+            We take no responsibility for losses at any casino linked or promoted here. You are
+            responsible for your own bets. RekoJ is a community leaderboard for Razed and Razed.IO
+            players under the code <strong>REKOJ</strong>. It is not a casino, and it is not operated by Razed.
+          </p>
+        </div>
+
+        <nav class="footer__col" aria-label="Explore">
+          <h4>Explore</h4>
+          <a href="index.html?board=razed">Razed Leaderboard</a>
+          <a href="index.html?board=razedio">Razed.IO Leaderboard</a>
+          <a href="https://www.razed.com/" target="_blank" rel="noopener">Visit Razed</a>
+          <a href="https://razed.io/" target="_blank" rel="noopener">Visit Razed.IO</a>
+        </nav>
+
+        <nav class="footer__col" aria-label="Social media">
+          <h4>Social Media</h4>
+          <a href="https://kick.com/rekoj" target="_blank" rel="noopener" style="--brand:#53fc18">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M1.333 0h8v5.333H12V2.667h2.667V0h8v8H20v2.667h-2.667v2.666H20V16h2.667v8h-8v-2.667H12v-2.666H9.333V24h-8Z"/></svg>
+            Kick
+          </a>
+          <a href="https://discord.com/invite/rekoj" target="_blank" rel="noopener" style="--brand:#5865f2">
+            <svg viewBox="0 0 640 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M524.531,69.836a1.5,1.5,0,0,0-.764-.7A485.065,485.065,0,0,0,404.081,32.03a1.816,1.816,0,0,0-1.923.91,337.461,337.461,0,0,0-14.9,30.6,447.848,447.848,0,0,0-134.426,0,309.541,309.541,0,0,0-15.135-30.6,1.89,1.89,0,0,0-1.924-.91A483.689,483.689,0,0,0,116.085,69.137a1.712,1.712,0,0,0-.788.676C39.068,183.651,18.186,294.69,28.43,404.354a2.016,2.016,0,0,0,.765,1.375A487.666,487.666,0,0,0,176.02,479.918a1.9,1.9,0,0,0,2.063-.676A348.2,348.2,0,0,0,208.12,430.4a1.86,1.86,0,0,0-1.019-2.588,321.173,321.173,0,0,1-45.868-21.853,1.885,1.885,0,0,1-.185-3.126c3.082-2.309,6.166-4.711,9.109-7.137a1.819,1.819,0,0,1,1.9-.256c96.229,43.917,200.41,43.917,295.5,0a1.812,1.812,0,0,1,1.924.233c2.944,2.426,6.027,4.851,9.132,7.16a1.884,1.884,0,0,1-.162,3.126,301.407,301.407,0,0,1-45.89,21.83,1.875,1.875,0,0,0-1,2.611,391.055,391.055,0,0,0,30.014,48.815,1.864,1.864,0,0,0,2.063.7A486.048,486.048,0,0,0,610.7,405.729a1.882,1.882,0,0,0,.765-1.352C623.729,277.594,590.933,167.465,524.531,69.836ZM222.491,337.58c-28.972,0-52.844-26.587-52.844-59.239S193.056,219.1,222.491,219.1c29.665,0,53.306,26.82,52.843,59.239C275.334,310.993,251.924,337.58,222.491,337.58Zm195.38,0c-28.971,0-52.843-26.587-52.843-59.239S388.437,219.1,417.871,219.1c29.667,0,53.307,26.82,52.844,59.239C470.715,310.993,447.538,337.58,417.871,337.58Z"/></svg>
+            Discord
+          </a>
+          <a href="https://x.com/rekojeu" target="_blank" rel="noopener" style="--brand:#eaf2ff">
+            <svg viewBox="0 0 512 512" aria-hidden="true" focusable="false"><path fill="currentColor" d="M389.2 48h70.6L305.6 224.2 487 464H345L233.7 318.6 106.5 464H35.8L200.7 275.5 26.8 48H172.4L272.9 180.9 389.2 48zM364.4 421.8h39.1L151.1 88h-42L364.4 421.8z"/></svg>
+            X
+          </a>
+        </nav>
+      </div>
+
+      <div class="footer__legal">
+        <span>© <span data-year>2026</span> RekoJ. All rights reserved.</span>
+        <nav class="footer__policies" aria-label="Policies">
+          <a href="terms.html">Terms of Service</a>
+          <a href="privacy.html">Privacy Policy</a>
+        </nav>
+      </div>
+    </div>
+  </footer>
+  </div>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

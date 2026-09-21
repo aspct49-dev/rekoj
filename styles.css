@@ -804,16 +804,18 @@ body[data-board="razedio"] .card--1 {
   .timer__label { width: 100%; max-width: 367px; }
   .timer__value { font-size: 15px; }
 
-  .table__head { grid-template-columns: 44px 1fr auto auto; gap: 12px; padding: 0 12px; font-size: 14px; }
-  .row { grid-template-columns: 44px 1fr auto auto; gap: 12px; padding: 0 12px; }
+  .table__head { grid-template-columns: 64px 1fr auto auto; gap: 12px; padding: 0 12px; font-size: 14px; }
+  .th { gap: 6px; }
+  .th--wagered { gap: 5px; }
+  .row { grid-template-columns: 64px 1fr auto auto; gap: 12px; padding: 0 12px; }
   .row__name, .row__wagered, .row__reward { font-size: 14px; }
   .row__user img, .row__user .row__avatar { width: 32px; height: 32px; }
 }
 
 @media (max-width: 480px) {
   .th--wagered, .row__wagered { display: none; }
-  .table__head { grid-template-columns: 44px 1fr auto; }
-  .row { grid-template-columns: 44px 1fr auto; }
+  .table__head { grid-template-columns: 64px 1fr auto; }
+  .row { grid-template-columns: 64px 1fr auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {

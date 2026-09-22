@@ -332,13 +332,11 @@ a { color: inherit; text-decoration: none; }
   object-fit: cover;
   transform: rotate(var(--rot));
   animation: float 4.5s ease-in-out infinite;
-  transition: filter .25s ease;
   will-change: transform;
 }
 .symbol--right img { animation-delay: -2.2s; }
 .symbol:hover img {
   animation: wiggle .9s ease-in-out infinite;
-  filter: drop-shadow(0 0 14px color-mix(in srgb, var(--accent) 55%, transparent)) brightness(1.1);
 }
 @keyframes float {
   0%, 100% { transform: translateY(0) rotate(var(--rot)); }

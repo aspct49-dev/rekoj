@@ -37,6 +37,14 @@
           iconPlace: "assets/razed/icon-place.svg",
           iconUser: "assets/razed/icon-user.svg",
           iconGift: "assets/razed/icon-gift.svg",
+          // Used for players the API gives no picture for: the three podium
+          // characters, then a single face for the rows, as in the design.
+          podiumAvatars: [
+            "assets/razed/avatar-1.png",
+            "assets/razed/avatar-2.png",
+            "assets/razed/avatar-3.png",
+          ],
+          rowAvatar: "assets/razed/avatar-1.png",
         },
         entries: [
           { name: "Admo***", avatar: "assets/razed/avatar-1.png", wagered: 329832 },
@@ -75,6 +83,12 @@
           iconPlace: "assets/razedio/icon-place.svg",
           iconUser: "assets/razedio/icon-user.svg",
           iconGift: "assets/razedio/icon-gift.svg",
+          podiumAvatars: [
+            "assets/razedio/avatar-1.png",
+            "assets/razedio/avatar-2.png",
+            "assets/razedio/avatar-3.png",
+          ],
+          rowAvatar: "assets/razedio/avatar-2.png",
         },
         entries: [
           { name: "Admo***", avatar: "assets/razedio/avatar-1.png", wagered: 84210 },

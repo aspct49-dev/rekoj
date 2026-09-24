@@ -37,6 +37,15 @@
 
   function pad(n) { return n < 10 ? "0" + n : String(n); }
 
+  // Players from the API arrive without a picture, so a place falls back to
+  // the design's own avatar for that position.
+  function avatarFor(key, place, entry) {
+    if (entry && entry.avatar) return entry.avatar;
+    var a = boards[key].assets;
+    if (place <= 3) return (a.podiumAvatars || [])[place - 1] || a.rowAvatar;
+    return a.rowAvatar;
+  }
+
   // The prize for a place comes from the board's prize table; an entry may
   // still carry its own `prize` to override it.
   function prizeFor(key, place) {
@@ -96,10 +105,8 @@
         '<img class="card__box" src="' + boxes[place] + '" alt="" width="281" height="349" />' +
         '<div class="card__details">' +
           '<div class="card__avatar">' +
-            '<div class="card__avatar-img' + (e.avatar ? '' : ' is-empty') + '">' +
-              (e.avatar
-                ? '<img src="' + esc(e.avatar) + '" alt="" loading="lazy" />'
-                : '<img class="avatar-fallback" src="' + board.assets.iconUser + '" alt="" />') +
+            '<div class="card__avatar-img">' +
+              '<img src="' + esc(avatarFor(key, place, e)) + '" alt="" loading="lazy" />' +
             "</div>" +
             '<span class="card__place">' + place + "</span>" +
           "</div>" +
@@ -125,9 +132,7 @@
       row.innerHTML =
         '<span class="row__place">' + place + "</span>" +
         '<span class="row__user">' +
-          (e.avatar
-            ? '<img src="' + esc(e.avatar) + '" alt="" loading="lazy" />'
-            : '<span class="row__avatar"><img class="avatar-fallback" src="' + boards[key].assets.iconUser + '" alt="" /></span>') +
+          '<img src="' + esc(avatarFor(key, place, e)) + '" alt="" loading="lazy" />' +
           '<span class="row__name">' + esc(maskName(e.name)) + "</span>" +
         "</span>" +
         '<span class="row__wagered"><span class="d">$</span>' + money(e.wagered, 2) + "</span>" +

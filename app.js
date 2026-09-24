@@ -37,6 +37,14 @@
 
   function pad(n) { return n < 10 ? "0" + n : String(n); }
 
+  // The prize for a place comes from the board's prize table; an entry may
+  // still carry its own `prize` to override it.
+  function prizeFor(key, place) {
+    var e = (state.entries[key] || boards[key].entries || [])[place - 1];
+    if (e && e.prize != null) return e.prize;
+    return (boards[key].prizes || [])[place - 1] || 0;
+  }
+
   function storageGet(key) {
     try { return window.localStorage.getItem(key); } catch (e) { return null; }
   }
@@ -61,7 +69,8 @@
       })
       .then(function (json) {
         if (typeof board.mapResponse === "function") return board.mapResponse(json);
-        return Array.isArray(json) ? json : json.entries || [];
+        var entries = Array.isArray(json) ? json : json.entries || [];
+        return entries.length ? entries : board.entries || [];
       })
       .catch(function (err) {
         console.warn("[rekoj] Failed to load " + key + " leaderboard, using static data.", err);
@@ -97,17 +106,18 @@
             '<span class="card__wager-label grad-text">Wagered</span>' +
             '<span class="card__wager-amount grad-text">$' + money(e.wagered, 0) + "</span>" +
           "</div>" +
-          '<p class="card__prize"><span class="d">$</span>' + money(e.prize, 0) + "</p>" +
+          '<p class="card__prize"><span class="d">$</span>' + money(prizeFor(key, place), 0) + "</p>" +
           '<div class="card__tag"><img src="' + gifts[place] + '" alt="" /><span class="grad-text">Prize</span></div>' +
         "</div>";
       podium.appendChild(card);
     }
   }
 
-  function renderRows(entries) {
+  function renderRows(key, entries) {
     var list = $("rows");
+    var last = boards[key].places || 10;
     list.innerHTML = "";
-    for (var place = 4; place <= 10; place++) {
+    for (var place = 4; place <= last; place++) {
       var e = entries[place - 1] || {};
       var row = el("li", "row");
       row.innerHTML =
@@ -117,7 +127,7 @@
           '<span class="row__name">' + esc(maskName(e.name)) + "</span>" +
         "</span>" +
         '<span class="row__wagered"><span class="d">$</span>' + money(e.wagered, 2) + "</span>" +
-        '<span class="row__reward"><span class="d">$</span>' + money(e.prize, 0) + "</span>";
+        '<span class="row__reward"><span class="d">$</span>' + money(prizeFor(key, place), 0) + "</span>";
       list.appendChild(row);
     }
   }
@@ -163,7 +173,7 @@
   function render(key) {
     var entries = state.entries[key] || boards[key].entries || [];
     renderPodium(key, entries);
-    renderRows(entries);
+    renderRows(key, entries);
   }
 
   /* ---------------- countdown ---------------- */

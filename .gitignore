@@ -3,3 +3,6 @@
 Thumbs.db
 node_modules
 *.otf
+.env
+.env.*
+!.env.example

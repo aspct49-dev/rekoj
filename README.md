@@ -92,10 +92,10 @@ The site is plain static files, so nothing needs building.
 `vercel.json` gives the pages clean URLs (`/terms`, `/privacy`) and sets caching for images and fonts. A missing page shows `404.html`.
 
 ## SEO
-- Canonical domain is **https://rekoj.org** — it appears in the `<link rel="canonical">`
+- Canonical domain is **https://rekoj.vercel.app** — it appears in the `<link rel="canonical">`
   tags, the Open Graph URLs, `sitemap.xml`, `robots.txt` and the JSON-LD in `index.html`.
   If the domain changes, search for `rekoj.org` and replace it everywhere.
-- The share image is `assets/shared/og-image.jpg` (1200x630). It is a screenshot of a
+- The share image is `assets/shared/og-image.png` (1200x630). It is a screenshot of a
   small template rendered with the site's own fonts and art; regenerate it if the prize
   pool changes.
 - `sitemap.xml` lists the three real pages; `robots.txt` points at it and blocks `/api/`.

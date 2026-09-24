@@ -36,6 +36,13 @@ Set it in Vercel under **Project → Settings → Environment Variables**:
 | `RAZED_REFERRAL_CODE` | no | defaults to the code in `data.js` |
 | `RAZEDIO_REFERRAL_KEY` / `RAZEDIO_API_URL` / `RAZEDIO_REFERRAL_CODE` | no | for Razed.IO, once that API is available |
 
+Razed.IO runs on different infrastructure from razed.com (`api.razed.io` is a
+separate service, and the razed.com key is not accepted there), so its endpoint has
+to come from Razed.IO's affiliate team. The board is already wired: set
+`RAZEDIO_API_URL` and `RAZEDIO_REFERRAL_KEY` and it goes live with no code change,
+as long as the response looks like razed.com's. Until then it shows the `entries`
+in `data.js`.
+
 For local development, copy `.env.example` to `.env.local`, fill it in and run
 `npx vercel dev` (the plain static server has no `/api` routes). `.env*` files are
 gitignored.

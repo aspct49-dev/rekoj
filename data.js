@@ -60,10 +60,10 @@
         prizes: [250, 125, 60, 40, 25],
         period: { from: "2026-09-24", to: "2026-10-31" },
         endsAt: "2026-11-01T00:00:00Z",
-        // No API endpoint for Razed.IO yet — edit `entries` below to update it,
-        // or set this to "/api/leaderboard?board=razedio" once the key and URL
-        // are set in the environment (see README).
-        apiUrl: null,
+        // Razed.IO runs on a different platform from razed.com and its affiliate
+        // endpoint is unknown, so this falls back to `entries` below until
+        // RAZEDIO_API_URL and RAZEDIO_REFERRAL_KEY are set (see README).
+        apiUrl: "/api/leaderboard?board=razedio",
         referralCode: "rekoj",
         assets: {
           bg: "assets/razedio/bg.jpg",

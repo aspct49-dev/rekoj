@@ -4,8 +4,11 @@
  * This is the single source of truth for both the page and the serverless
  * function in api/leaderboard.js, so periods and prizes can never drift apart.
  *
- * period.from / period.to  the days the board counts, inclusive, in UTC.
- * endsAt                   when the countdown hits zero (ISO, UTC).
+ * period.from / period.to  the days the board counts, inclusive, in UTC. Sent
+ *                          to the affiliate API as its `from` / `to` dates.
+ * endsAt                   when the countdown hits zero. Always UTC: write it
+ *                          with a trailing Z, e.g. the instant 31 Oct ends is
+ *                          "2026-11-01T00:00:00Z".
  * places                   how many places the board pays and shows.
  * prizes                   prize per place, 1st first. Must match `places`.
  * entries                  shown when the API is unreachable (local preview).
@@ -23,7 +26,7 @@
         visitUrl: "https://www.razed.com/",
         places: 10,
         prizes: [1500, 750, 200, 150, 125, 100, 75, 50, 30, 20],
-        period: { from: "2026-09-24", to: "2026-10-31" },
+        period: { from: "2026-09-20", to: "2026-10-31" },
         endsAt: "2026-11-01T00:00:00Z",
         apiUrl: "/api/leaderboard?board=razed",
         referralCode: "rekoj",

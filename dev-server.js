@@ -49,7 +49,11 @@ http
         res.writeHead(404, { "Content-Type": "application/json" });
         return res.end('{"error":"No such API route"}');
       }
-      delete require.cache[require.resolve(file)]; // pick up edits without a restart
+      // Pick up edits without a restart: drop the handler and everything it
+      // pulled in from this project (data.js especially), but keep node_modules.
+      for (const id of Object.keys(require.cache)) {
+        if (id.startsWith(ROOT) && !id.includes("node_modules")) delete require.cache[id];
+      }
       const handler = require(file);
       req.query = Object.fromEntries(url.searchParams);
       try {

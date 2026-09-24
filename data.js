@@ -69,7 +69,7 @@
         visitUrl: "https://razed.io/",
         places: 5,
         prizes: [250, 125, 60, 40, 25],
-        period: { from: "2026-09-24", to: "2026-10-31" },
+        period: { from: "2026-09-20", to: "2026-10-31" },
         endsAt: "2026-11-01T00:00:00Z",
         // Razed.IO runs on a different platform from razed.com and its affiliate
         // endpoint is unknown, so this falls back to `entries` below until

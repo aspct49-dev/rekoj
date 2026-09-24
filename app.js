@@ -146,9 +146,18 @@
     var a = board.assets;
 
     body.setAttribute("data-board", key);
-    document.title = "RekoJ | " + board.name + " Leaderboard";
+    // Keep the served title's shape so switching boards doesn't cost the
+    // keywords search engines index.
+    document.title = board.prizePool + " Monthly " + board.name + " Leaderboard | RekoJ";
 
     $("prizePool").textContent = board.prizePool;
+
+    var heading = $("seoHeading");
+    if (heading) {
+      heading.textContent =
+        board.prizePool + " monthly leaderboard for " + board.name +
+        " players under code " + config.code;
+    }
     $("symbolLeft").src = a.symbolLeft;
     $("symbolRight").src = a.symbolRight;
     $("iconPlace").src = a.iconPlace;

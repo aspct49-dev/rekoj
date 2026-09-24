@@ -3,12 +3,68 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RekoJ | Monthly Leaderboard</title>
-  <meta name="description" content="Compete against other players under code REKOJ and win big rewards!" />
+  <title>RekoJ Leaderboard | $3,000 Monthly on Razed &amp; Razed.IO</title>
+  <meta name="description" content="Play at Razed or Razed.IO under code REKOJ and climb the monthly leaderboard. $3,000 across 10 places on Razed and $500 across 5 on Razed.IO, with live standings and a countdown." />
+  <link rel="canonical" href="https://rekoj.org/" />
+  <meta name="theme-color" content="#0d1015" />
+  <meta name="robots" content="index, follow, max-image-preview:large" />
+
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="RekoJ" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:title" content="RekoJ Leaderboard | $3,000 Monthly on Razed &amp; Razed.IO" />
+  <meta property="og:description" content="Play at Razed or Razed.IO under code REKOJ and climb the monthly leaderboard. $3,000 across 10 places on Razed and $500 across 5 on Razed.IO, with live standings and a countdown." />
+  <meta property="og:url" content="https://rekoj.org/" />
+  <meta property="og:image" content="https://rekoj.org/assets/shared/og-image.jpg" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="RekoJ — $3,000 monthly leaderboard for Razed and Razed.IO under code REKOJ" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:site" content="@rekojeu" />
+  <meta name="twitter:creator" content="@rekojeu" />
+  <meta name="twitter:image" content="https://rekoj.org/assets/shared/og-image.jpg" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://rekoj.org/#website",
+        "url": "https://rekoj.org/",
+        "name": "RekoJ",
+        "description": "Monthly wager leaderboards for Razed and Razed.IO players under the code REKOJ.",
+        "inLanguage": "en",
+        "publisher": { "@id": "https://rekoj.org/#org" }
+      },
+      {
+        "@type": "Organization",
+        "@id": "https://rekoj.org/#org",
+        "name": "RekoJ",
+        "url": "https://rekoj.org/",
+        "logo": "https://rekoj.org/assets/shared/rekoj-logo.png",
+        "sameAs": [
+          "https://kick.com/rekoj",
+          "https://x.com/rekojeu",
+          "https://discord.com/invite/rekoj"
+        ]
+      },
+      {
+        "@type": "WebPage",
+        "@id": "https://rekoj.org/#webpage",
+        "url": "https://rekoj.org/",
+        "name": "RekoJ Leaderboard",
+        "isPartOf": { "@id": "https://rekoj.org/#website" },
+        "about": { "@id": "https://rekoj.org/#org" },
+        "primaryImageOfPage": "https://rekoj.org/assets/shared/og-image.jpg"
+      }
+    ]
+  }
+  </script>
   <link rel="icon" type="image/png" href="assets/shared/rekoj-logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preload" href="fonts/PPNeueCorp-NormalUltrabold.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body data-board="razed">
@@ -16,7 +72,7 @@
     <!-- Top bar -->
     <header class="topbar">
       <div class="topbar__inner">
-        <a class="brand" href="./" aria-label="RekoJ home">
+        <a class="brand" href="/" aria-label="RekoJ home">
           <img class="brand__logo" src="assets/shared/rekoj-logo.png" alt="" width="54" height="38" />
           <img class="brand__wordmark" src="assets/shared/rekoj-wordmark.svg" alt="RekoJ" width="146" height="22" />
         </a>
@@ -51,9 +107,11 @@
             </button>
           </div>
 
+          <h1 class="sr-only" id="seoHeading">$3,000 monthly leaderboard for Razed and Razed.IO players under code REKOJ</h1>
+
           <div class="title__text">
             <p class="title__pool"><span class="title__amount" id="prizePool">$5,000</span> <span class="title__monthly">MONTHLY</span></p>
-            <h1 class="title__lb">LEADERBOARD</h1>
+            <p class="title__lb">LEADERBOARD</p>
             <p class="title__sub">Compete against other players under code <span class="accent" data-code>REKOJ</span> and win big rewards!</p>
           </div>
 
@@ -98,7 +156,7 @@
     <div class="footer__wrap">
       <div class="footer__top">
         <div class="footer__brand">
-          <a class="brand" href="index.html" aria-label="RekoJ home">
+          <a class="brand" href="/" aria-label="RekoJ home">
             <img class="brand__logo" src="assets/shared/rekoj-logo.png" alt="" width="54" height="38" />
             <img class="brand__wordmark" src="assets/shared/rekoj-wordmark.svg" alt="RekoJ" width="146" height="22" />
           </a>
@@ -119,8 +177,8 @@
 
         <nav class="footer__col" aria-label="Explore">
           <h4>Explore</h4>
-          <a href="index.html?board=razed">Razed Leaderboard</a>
-          <a href="index.html?board=razedio">Razed.IO Leaderboard</a>
+          <a href="/?board=razed">Razed Leaderboard</a>
+          <a href="/?board=razedio">Razed.IO Leaderboard</a>
           <a href="https://www.razed.com/" target="_blank" rel="noopener">Visit Razed</a>
           <a href="https://razed.io/" target="_blank" rel="noopener">Visit Razed.IO</a>
         </nav>
@@ -145,8 +203,8 @@
       <div class="footer__legal">
         <span>© <span data-year>2026</span> RekoJ. All rights reserved.</span>
         <nav class="footer__policies" aria-label="Policies">
-          <a href="terms.html">Terms of Service</a>
-          <a href="privacy.html">Privacy Policy</a>
+          <a href="/terms">Terms of Service</a>
+          <a href="/privacy">Privacy Policy</a>
         </nav>
       </div>
     </div>

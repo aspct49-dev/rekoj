@@ -3,9 +3,11 @@
 Static site built from the Figma file "Rekoj.org (Copy)". It has no build step and no dependencies.
 
 ## Run locally
-Open `index.html` directly, or serve the folder:
+    node dev-server.js        # http://127.0.0.1:5173, serves the /api routes too
 
-    npx serve .
+`dev-server.js` reads `.env.local`, so the leaderboard shows live data exactly as in
+production. `npx vercel dev` works the same way. Opening `index.html` directly, or any
+plain static server, has no `/api` routes, so the page falls back to the sample rows.
 
 ## Editing the leaderboards
 Everything you can change is in `data.js`:
@@ -41,9 +43,20 @@ gitignored.
 If the API is unreachable or no key is set, the page falls back to the `entries`
 in `data.js`, so it never renders empty.
 
-The response shape is read tolerantly (`rowsFrom`/`mapRow` in the function accept
-the common field names). Once the real shape is known, those two functions are the
-only place that needs changing.
+Confirmed request and response (razed.com):
+
+    GET https://api.razed.com/player/api/v1/referrals/leaderboard
+        ?referral_code=rekoj&from=2026-09-24&to=2026-10-31&top=10
+    X-Referral-Key: <key>
+
+    { "current_page": 1, "last_page": 1, "per_page": 10, "total": 1,
+      "from": "2026-09-24", "to": "2026-10-31",
+      "data": [ { "username": "Affelito", "referred_by_code": "rekoj",
+                  "wagered": "0.050000000000000000" } ] }
+
+Note `referral_code` is singular; the plural form returns 404. The API has no avatars,
+so players show the board's user glyph, and usernames are masked on the page
+(`maskNames` in `data.js`).
 
 ## Board switching
 The Razed and Razed.IO buttons switch boards. You can link straight to one with `?board=razed` or `?board=razedio`.

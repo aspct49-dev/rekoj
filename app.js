@@ -96,15 +96,17 @@
         '<img class="card__box" src="' + boxes[place] + '" alt="" width="281" height="349" />' +
         '<div class="card__details">' +
           '<div class="card__avatar">' +
-            '<div class="card__avatar-img">' +
-              (e.avatar ? '<img src="' + esc(e.avatar) + '" alt="" loading="lazy" />' : "") +
+            '<div class="card__avatar-img' + (e.avatar ? '' : ' is-empty') + '">' +
+              (e.avatar
+                ? '<img src="' + esc(e.avatar) + '" alt="" loading="lazy" />'
+                : '<img class="avatar-fallback" src="' + board.assets.iconUser + '" alt="" />') +
             "</div>" +
             '<span class="card__place">' + place + "</span>" +
           "</div>" +
           '<p class="card__name grad-text">' + esc(maskName(e.name)) + "</p>" +
           '<div class="card__wager">' +
             '<span class="card__wager-label grad-text">Wagered</span>' +
-            '<span class="card__wager-amount grad-text">$' + money(e.wagered, 0) + "</span>" +
+            '<span class="card__wager-amount grad-text">$' + money(e.wagered, e.wagered >= 10000 ? 0 : 2) + "</span>" +
           "</div>" +
           '<p class="card__prize"><span class="d">$</span>' + money(prizeFor(key, place), 0) + "</p>" +
           '<div class="card__tag"><img src="' + gifts[place] + '" alt="" /><span class="grad-text">Prize</span></div>' +
@@ -123,7 +125,9 @@
       row.innerHTML =
         '<span class="row__place">' + place + "</span>" +
         '<span class="row__user">' +
-          (e.avatar ? '<img src="' + esc(e.avatar) + '" alt="" loading="lazy" />' : '<span class="row__avatar"></span>') +
+          (e.avatar
+            ? '<img src="' + esc(e.avatar) + '" alt="" loading="lazy" />'
+            : '<span class="row__avatar"><img class="avatar-fallback" src="' + boards[key].assets.iconUser + '" alt="" /></span>') +
           '<span class="row__name">' + esc(maskName(e.name)) + "</span>" +
         "</span>" +
         '<span class="row__wagered"><span class="d">$</span>' + money(e.wagered, 2) + "</span>" +

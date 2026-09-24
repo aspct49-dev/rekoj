@@ -426,6 +426,11 @@ body[data-board="razedio"] .card--1 {
   background: #1a2130;
 }
 .card__avatar-img img { width: 100%; height: 100%; object-fit: cover; border-radius: 4px; }
+/* No picture from the API: the board's own user glyph, quietly centred. */
+.card__avatar-img.is-empty { display: grid; place-items: center; }
+.card__avatar-img.is-empty .avatar-fallback { width: 42px; height: 46px; object-fit: contain; opacity: .45; }
+.row__avatar { display: grid; place-items: center; }
+.row__avatar .avatar-fallback { width: 15px; height: 17px; object-fit: contain; opacity: .45; }
 .card__place {
   position: absolute;
   left: 0;

@@ -27,22 +27,23 @@ function envPrefix(board) {
   return board.toUpperCase().replace(/[^A-Z0-9]/g, "") + "_";
 }
 
-/** Today, or the last day of the period if that has passed. YYYY-MM-DD, UTC. */
-function today() {
-  return new Date().toISOString().slice(0, 10);
-}
-
+/**
+ * The window the board counts, straight from data.js. The API accepts an end
+ * date in the future and returns the running totals, so the period is sent
+ * whole rather than clamped to today (a single-day window returns nothing).
+ */
 function windowFor(board) {
   const period = board.period || {};
-  const to = period.to && period.to < today() ? period.to : today();
-  return { from: period.from, to };
+  return { from: period.from, to: period.to };
 }
 
 /**
- * Pull the rows out of whatever shape the API returns, and read each row's
- * fields under any of the names these APIs commonly use. Tolerant on purpose:
- * the exact shape is unconfirmed, so this accepts the likely ones rather than
- * breaking the page on a rename.
+ * Razed answers with:
+ *   { current_page, last_page, per_page, total, from, to,
+ *     data: [ { username, referred_by_code, wagered: "904.3200000" } ] }
+ *
+ * `data` is read first; the other keys and field names are accepted too, so a
+ * rename upstream degrades instead of blanking the board.
  */
 function rowsFrom(json) {
   if (Array.isArray(json)) return json;
@@ -100,7 +101,7 @@ module.exports = async function handler(req, res) {
   const range = windowFor(board);
 
   const url = new URL(endpoint);
-  url.searchParams.set("referral_codes", code);
+  url.searchParams.set("referral_code", code);
   if (range.from) url.searchParams.set("from", range.from);
   if (range.to) url.searchParams.set("to", range.to);
   url.searchParams.set("top", String(board.places || 10));

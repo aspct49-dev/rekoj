@@ -14,7 +14,7 @@
   root.REKOJ_CONFIG = {
     code: "REKOJ",
     defaultBoard: "razed",
-    maskNames: false,
+    maskNames: true,
 
     boards: {
       razed: {

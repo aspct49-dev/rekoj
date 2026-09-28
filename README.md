@@ -31,17 +31,15 @@ Set it in Vercel under **Project → Settings → Environment Variables**:
 
 | Variable | Required | Notes |
 |---|---|---|
-| `RAZED_REFERRAL_KEY` | yes | the `X-Referral-Key` for razed.com |
-| `RAZED_API_URL` | no | overrides the endpoint |
-| `RAZED_REFERRAL_CODE` | no | defaults to the code in `data.js` |
-| `RAZEDIO_REFERRAL_KEY` / `RAZEDIO_API_URL` / `RAZEDIO_REFERRAL_CODE` | no | for Razed.IO, once that API is available |
+| `RAZED_REFERRAL_KEY` | yes | razed.com key, sent as `X-Referral-Key` |
+| `RAZEDIO_API_KEY` | yes | razed.io key (64 hex chars), sent as `x-api-key` |
+| `RAZED_API_URL` / `RAZEDIO_API_URL` | no | override the endpoints |
+| `RAZED_REFERRAL_CODE` / `RAZEDIO_REFERRAL_CODE` | no | default to the code in `data.js` |
 
-Razed.IO runs on different infrastructure from razed.com (`api.razed.io` is a
-separate service, and the razed.com key is not accepted there), so its endpoint has
-to come from Razed.IO's affiliate team. The board is already wired: set
-`RAZEDIO_API_URL` and `RAZEDIO_REFERRAL_KEY` and it goes live with no code change,
-as long as the response looks like razed.com's. Until then it shows the `entries`
-in `data.js`.
+The two casinos run different APIs, so each board names a flavour (`apiFlavor` in
+`data.js`) and `FLAVOURS` in `api/leaderboard.js` holds the endpoint, auth header,
+parameter names and row shape for each. Adding a third casino means adding one
+entry there.
 
 For local development, copy `.env.example` to `.env.local`, fill it in and run
 `npx vercel dev` (the plain static server has no `/api` routes). `.env*` files are
@@ -61,9 +59,27 @@ Confirmed request and response (razed.com):
       "data": [ { "username": "Affelito", "referred_by_code": "rekoj",
                   "wagered": "0.050000000000000000" } ] }
 
-Note `referral_code` is singular; the plural form returns 404. The API has no avatars,
-so players show the board's user glyph, and usernames are masked on the page
-(`maskNames` in `data.js`).
+Note `referral_code` is singular; the plural form returns 404, and a single-day window
+returns nothing, so the whole period is always sent. This API carries no avatars.
+
+Razed.IO (`Partner Referral Stats API`):
+
+    GET https://api.razed.io/externals/affiliates
+        ?codes=rekoj&startDate=2026-09-20T00:00:00Z&endDate=2026-10-31T23:59:59Z
+    x-api-key: <64 hex chars>
+
+    [ { "id": 128394, "username": "player_one",
+        "avatar": "https://img.razed.io/avatars/128394.png",
+        "wagered": "1540.25", "deposited": "300.00", "stillUnderCode": true } ]
+
+Its dates need an explicit `Z` offset, amounts are decimal strings, and it does carry
+avatars. Players who later moved to another affiliate come back with
+`stillUnderCode: false`; their wagering under this code still counts, so they are kept.
+Poll no faster than once a minute — the page refreshes every 60s, and that API caches
+for 60s anyway.
+
+Where a player has no avatar, the page uses the character from the design for that
+place. Usernames are masked on the page (`maskNames` in `data.js`).
 
 ## Board switching
 The Razed and Razed.IO buttons switch boards. You can link straight to one with `?board=razed` or `?board=razedio`.

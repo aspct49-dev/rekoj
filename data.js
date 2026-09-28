@@ -29,6 +29,7 @@
         period: { from: "2026-09-20", to: "2026-10-31" },
         endsAt: "2026-11-01T00:00:00Z",
         apiUrl: "/api/leaderboard?board=razed",
+        apiFlavor: "razed",
         referralCode: "rekoj",
         assets: {
           bg: "assets/razed/bg.jpg",
@@ -71,10 +72,10 @@
         prizes: [250, 125, 60, 40, 25],
         period: { from: "2026-09-20", to: "2026-10-31" },
         endsAt: "2026-11-01T00:00:00Z",
-        // Razed.IO runs on a different platform from razed.com and its affiliate
-        // endpoint is unknown, so this falls back to `entries` below until
-        // RAZEDIO_API_URL and RAZEDIO_REFERRAL_KEY are set (see README).
+        // Razed.IO has its own API (see api/leaderboard.js) and needs
+        // RAZEDIO_API_KEY set; without it the page falls back to `entries`.
         apiUrl: "/api/leaderboard?board=razedio",
+        apiFlavor: "razedio",
         referralCode: "rekoj",
         assets: {
           bg: "assets/razedio/bg.jpg",

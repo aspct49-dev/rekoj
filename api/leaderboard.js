@@ -35,11 +35,14 @@ function pick(row, keys) {
 /**
  * Field names are read loosely on purpose: a rename upstream should cost a
  * field, not the whole board.
+ *
+ * Avatars are deliberately not taken from the API, even where it offers them
+ * (Razed.IO does): every place shows the character it has in the design, so
+ * the boards look the same as each other and as the Figma file.
  */
 function commonRow(row) {
   return {
     name: pick(row, ["masked_username", "maskedUsername", "username", "name", "player", "nickname"]),
-    avatar: pick(row, ["avatar", "avatar_url", "avatarUrl", "image", "picture"]) || null,
     wagered: Number(
       pick(row, ["wagered", "wager", "wagered_amount", "total_wagered", "totalWagered", "amount", "turnover"])
     ) || 0,

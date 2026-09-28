@@ -23,7 +23,7 @@
       razed: {
         name: "Razed",
         prizePool: "$3,000",
-        visitUrl: "https://www.razed.com/",
+        visitUrl: "https://www.razed.com/signup/?raf=rekoj",
         places: 10,
         prizes: [1500, 750, 200, 150, 125, 100, 75, 50, 30, 20],
         period: { from: "2026-09-20", to: "2026-10-31" },
@@ -67,7 +67,7 @@
       razedio: {
         name: "Razed.IO",
         prizePool: "$500.00",
-        visitUrl: "https://razed.io/",
+        visitUrl: "https://razed.io/?referralCode=rekoj",
         places: 5,
         prizes: [250, 125, 60, 40, 25],
         period: { from: "2026-09-20", to: "2026-10-31" },

@@ -1,0 +1,53 @@
+  <header class="topbar">
+    <div class="topbar__inner">
+      <a class="brand" href="/" aria-label="RekoJ home">
+        <img class="brand__logo" src="/assets/shared/rekoj-logo.webp" alt="" width="54" height="38" />
+        <img class="brand__wordmark" src="/assets/shared/rekoj-wordmark.svg" alt="RekoJ" width="146" height="22" />
+      </a>
+
+      <nav class="nav" aria-label="Main">
+        <a class="nav__item nav__item--home" href="/" data-nav="home">
+          <span class="nav__icon nav__icon--home">
+            <img class="nav__ico" src="/assets/nav/home.svg" alt="" width="20" height="18" />
+            <img class="nav__ico nav__ico--on" src="/assets/nav/home-active.svg" alt="" width="20" height="18" />
+          </span>
+          <span class="nav__label">HOME</span>
+        </a>
+        <a class="nav__item nav__item--leaderboard" href="/leaderboard" data-nav="leaderboard">
+          <span class="nav__icon nav__icon--trophy">
+            <img class="nav__ico" src="/assets/nav/trophy.svg" alt="" width="20" height="20" />
+            <img class="nav__ico nav__ico--on" src="/assets/nav/trophy-active.svg" alt="" width="20" height="20" />
+          </span>
+          <span class="nav__label">LEADERBOARD</span>
+        </a>
+        <a class="nav__item nav__item--raffles" href="/raffles" data-nav="raffles">
+          <span class="nav__icon nav__icon--ticket">
+            <img class="nav__ico" src="/assets/nav/ticket.svg" alt="" width="21" height="16" />
+            <img class="nav__ico nav__ico--on" src="/assets/nav/ticket-active.svg" alt="" width="21" height="16" />
+          </span>
+          <span class="nav__label">RAFFLES</span>
+        </a>
+        <a class="nav__item nav__item--store" href="/points-store" data-nav="store">
+          <span class="nav__icon nav__icon--bag">
+            <img class="nav__ico" src="/assets/nav/bag.svg" alt="" width="18" height="18" />
+            <img class="nav__ico nav__ico--on" src="/assets/nav/bag-active.svg" alt="" width="18" height="18" />
+          </span>
+          <span class="nav__label">POINTS STORE</span>
+        </a>
+      </nav>
+
+      <a class="btn nav-login" href="/api/auth/kick/login" data-login>LOGIN</a>
+      <div class="account" data-account hidden>
+        <button class="account__chip" type="button" aria-haspopup="menu" aria-expanded="false">
+          <img class="account__avatar" src="/assets/shared/rekoj-logo.webp" alt="" width="28" height="28" />
+          <span class="account__name"></span>
+          <span class="account__points" title="Rekoj points"><img src="/assets/store/coin.webp" alt="Points" width="16" height="16" /><span data-points>—</span></span>
+        </button>
+        <div class="account__menu" role="menu" hidden>
+          <a role="menuitem" href="/profile">Profile</a>
+          <a role="menuitem" href="/admin" data-admin-link hidden>Admin panel</a>
+          <button role="menuitem" type="button" data-logout>Log out</button>
+        </div>
+      </div>
+    </div>
+  </header>

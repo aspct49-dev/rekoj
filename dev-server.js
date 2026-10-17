@@ -16,26 +16,16 @@ const PORT = Number(process.env.PORT) || 5173;
 const ROOT = __dirname;
 
 // .env.local -> process.env (existing values win, as on Vercel)
-const fromFile = new Set();
 try {
   const text = fs.readFileSync(path.join(ROOT, ".env.local"), "utf8");
   for (const line of text.split(/\r?\n/)) {
     const match = line.match(/^\s*([A-Za-z0-9_]+)\s*=\s*(.*)\s*$/);
     if (match && !process.env[match[1]]) {
       process.env[match[1]] = match[2].replace(/^["']|["']$/g, "");
-      fromFile.add(match[1]);
     }
   }
 } catch (err) {
   console.warn("No .env.local found — the leaderboard will use the fallback entries.");
-}
-
-// The database in .env.local is the live one. Local runs (and test servers)
-// save to .data/ instead unless you ask for it: USE_REMOTE_DB=1 node dev-server.js
-if (process.env.USE_REMOTE_DB !== "1") {
-  const skipped = ["DATABASE_URL", "POSTGRES_URL"].filter((k) => fromFile.has(k));
-  skipped.forEach((k) => delete process.env[k]);
-  if (skipped.length) console.log("Using local files in .data/, not the database in .env.local (start with USE_REMOTE_DB=1 to use it).");
 }
 
 const TYPES = {
@@ -45,7 +35,6 @@ const TYPES = {
   ".json": "application/json; charset=utf-8",
   ".svg": "image/svg+xml",
   ".png": "image/png",
-  ".webp": "image/webp",
   ".jpg": "image/jpeg",
   ".woff2": "font/woff2",
 };
@@ -55,9 +44,11 @@ http
     const url = new URL(req.url, "http://" + (req.headers.host || "127.0.0.1"));
 
     if (url.pathname.startsWith("/api/")) {
-      // Like vercel.json: a matching api/<name>.js, otherwise the router
-      let file = path.join(ROOT, url.pathname + ".js");
-      if (!fs.existsSync(file)) file = path.join(ROOT, "api", "router.js");
+      const file = path.join(ROOT, url.pathname + ".js");
+      if (!fs.existsSync(file)) {
+        res.writeHead(404, { "Content-Type": "application/json" });
+        return res.end('{"error":"No such API route"}');
+      }
       // Pick up edits without a restart: drop the handler and everything it
       // pulled in from this project (data.js especially), but keep node_modules.
       for (const id of Object.keys(require.cache)) {
@@ -76,7 +67,6 @@ http
 
     // Static files, with Vercel's cleanUrls behaviour (/terms -> terms.html).
     let rel = decodeURIComponent(url.pathname);
-    if (/^\/overlay\/[a-z-]+\/?$/.test(rel)) rel = "/overlay.html"; // vercel.json rewrite
     if (rel.endsWith("/")) rel += "index.html";
     let file = path.join(ROOT, rel);
     if (!path.resolve(file).startsWith(ROOT)) {

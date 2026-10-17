@@ -2,14 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <!-- Page-change animation opt-in. Inline on purpose: Chrome decides as the
-       new page is revealed, and if this sat in styles.css a slow stylesheet
-       would silently cancel the transition. -->
-  <style>@view-transition{navigation:auto}@media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}</style>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Privacy Policy | RekoJ</title>
-  <meta name="description" content="What RekoJ handles: Kick login, Rekoj points, linked casino usernames for raffles, store orders and messages, the cookies it uses, and how to have your data removed." />
-  <link rel="canonical" href="https://rekoj.org/privacy" />
+  <meta name="description" content="What RekoJ handles when you visit: no accounts, no cookies and no tracking. What is shown publicly, and how to have it removed." />
+  <link rel="canonical" href="https://rekoj.vercel.app/privacy" />
   <meta name="theme-color" content="#0d1015" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
 
@@ -17,129 +13,66 @@
   <meta property="og:site_name" content="RekoJ" />
   <meta property="og:locale" content="en_US" />
   <meta property="og:title" content="Privacy Policy | RekoJ" />
-  <meta property="og:description" content="What RekoJ handles: Kick login, Rekoj points, linked casino usernames for raffles, store orders and messages, the cookies it uses, and how to have your data removed." />
-  <meta property="og:url" content="https://rekoj.org/privacy" />
+  <meta property="og:description" content="What RekoJ handles when you visit: no accounts, no cookies and no tracking. What is shown publicly, and how to have it removed." />
+  <meta property="og:url" content="https://rekoj.vercel.app/privacy" />
   <meta property="og:image:type" content="image/png" />
-  <meta property="og:image" content="https://rekoj.org/assets/shared/og-image.png" />
+  <meta property="og:image" content="https://rekoj.vercel.app/assets/shared/og-image.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="The RekoJ logo" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@rekojeu" />
   <meta name="twitter:creator" content="@rekojeu" />
-  <meta name="twitter:image" content="https://rekoj.org/assets/shared/og-image.png" />
+  <meta name="twitter:image" content="https://rekoj.vercel.app/assets/shared/og-image.png" />
   <link rel="icon" type="image/png" href="assets/shared/rekoj-logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="preload" href="fonts/PPNeueCorp-NormalUltrabold.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="styles.css" />
-  <script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": "https://rekoj.org/"
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Privacy Policy",
-        "item": "https://rekoj.org/privacy"
-      }
-    ]
-  }
-  </script>
 </head>
-<body data-board="razed" data-page="legal" class="is-legal">
+<body data-board="razed" class="is-legal">
   <div class="page">
-  <!-- layout:header -->
-  <header class="topbar">
-    <div class="topbar__inner">
-      <a class="brand" href="/" aria-label="RekoJ home">
-        <img class="brand__logo" src="/assets/shared/rekoj-logo.webp" alt="" width="54" height="38" />
-        <img class="brand__wordmark" src="/assets/shared/rekoj-wordmark.svg" alt="RekoJ" width="146" height="22" />
-      </a>
+    <header class="topbar">
+      <div class="topbar__inner">
+        <a class="brand" href="/" aria-label="RekoJ home">
+          <img class="brand__logo" src="assets/shared/rekoj-logo.png" alt="" width="54" height="38" />
+          <img class="brand__wordmark" src="assets/shared/rekoj-wordmark.svg" alt="RekoJ" width="146" height="22" />
+        </a>
 
-      <nav class="nav" aria-label="Main">
-        <a class="nav__item nav__item--home" href="/" data-nav="home">
-          <span class="nav__icon nav__icon--home">
-            <img class="nav__ico" src="/assets/nav/home.svg" alt="" width="20" height="18" />
-            <img class="nav__ico nav__ico--on" src="/assets/nav/home-active.svg" alt="" width="20" height="18" />
-          </span>
-          <span class="nav__label">HOME</span>
+        <a class="btn btn--dark nav-lb" href="/#leaderboard">
+          <img src="assets/shared/trophy-nav.svg" alt="" width="20" height="20" />
+          <span>LEADERBOARD</span>
         </a>
-        <a class="nav__item nav__item--leaderboard" href="/leaderboard" data-nav="leaderboard">
-          <span class="nav__icon nav__icon--trophy">
-            <img class="nav__ico" src="/assets/nav/trophy.svg" alt="" width="20" height="20" />
-            <img class="nav__ico nav__ico--on" src="/assets/nav/trophy-active.svg" alt="" width="20" height="20" />
-          </span>
-          <span class="nav__label">LEADERBOARD</span>
-        </a>
-        <a class="nav__item nav__item--raffles" href="/raffles" data-nav="raffles">
-          <span class="nav__icon nav__icon--ticket">
-            <img class="nav__ico" src="/assets/nav/ticket.svg" alt="" width="21" height="16" />
-            <img class="nav__ico nav__ico--on" src="/assets/nav/ticket-active.svg" alt="" width="21" height="16" />
-          </span>
-          <span class="nav__label">RAFFLES</span>
-        </a>
-        <a class="nav__item nav__item--store" href="/points-store" data-nav="store">
-          <span class="nav__icon nav__icon--bag">
-            <img class="nav__ico" src="/assets/nav/bag.svg" alt="" width="18" height="18" />
-            <img class="nav__ico nav__ico--on" src="/assets/nav/bag-active.svg" alt="" width="18" height="18" />
-          </span>
-          <span class="nav__label">POINTS STORE</span>
-        </a>
-      </nav>
 
-      <a class="btn nav-login" href="/api/auth/kick/login" data-login>LOGIN</a>
-      <div class="account" data-account hidden>
-        <button class="account__chip" type="button" aria-haspopup="menu" aria-expanded="false">
-          <img class="account__avatar" src="/assets/shared/rekoj-logo.webp" alt="" width="28" height="28" />
-          <span class="account__name"></span>
-          <span class="account__points" title="Rekoj points"><img src="/assets/store/coin.webp" alt="Points" width="16" height="16" /><span data-points>—</span></span>
-        </button>
-        <div class="account__menu" role="menu" hidden>
-          <a role="menuitem" href="/profile">Profile</a>
-          <a role="menuitem" href="/admin" data-admin-link hidden>Admin panel</a>
-          <button role="menuitem" type="button" data-logout>Log out</button>
-        </div>
+        <a class="btn nav-visit" href="https://www.razed.com/signup/?raf=rekoj" target="_blank" rel="noopener">
+          <span>VISIT</span>
+          <img class="nav-visit__logo" src="assets/shared/razed-logo-dark-sm.png" alt="Razed" width="61" height="12" />
+        </a>
       </div>
-    </div>
-  </header>
-  <!-- /layout:header -->
+    </header>
 
     <main class="legal">
       <div class="legal__wrap">
-        <nav class="crumbs" aria-label="Breadcrumb">
-          <ol>
-            <li><a href="/">Home</a></li>
-            <li><span aria-current="page">Privacy Policy</span></li>
-          </ol>
-        </nav>
         <h1 class="legal__title">Privacy Policy</h1>
-        <p class="legal__lede">What this site handles about you, why, who else is involved, and how to have it removed.</p>
-        <p class="legal__updated">Last updated 17 October 2026</p>
+        <p class="legal__lede">What this site handles about you, why, and how to have it removed. The list is short, and this page covers all of it.</p>
+        <p class="legal__updated">Last updated 22 September 2026</p>
 
         <div class="prose">
         <h2>The short version</h2>
         <p>
-          You can browse the leaderboards, raffles and store without telling us anything. If you
-          <strong>log in with Kick</strong>, we keep your Kick username and profile picture so the site
-          knows who you are. If you use the Points Store, link a casino username for raffles, or send us a
-          message, we keep what that needs. We sell nothing to anybody, and we run no advertising trackers.
+          RekoJ has no accounts, no sign-in and no forms. You can use every part of the site without
+          telling us anything. We don't ask for your name, email or address. We run no analytics or
+          advertising trackers, and we sell nothing to anybody.
         </p>
 
-        <h2>If you just browse</h2>
+        <h2>What the site handles</h2>
         <ul>
           <li>
             <strong>Your leaderboard choice.</strong> When you pick Razed or Razed.IO, your browser
             saves that choice in its local storage (a single entry named <code>rekoj-board</code>), so
-            the same board opens next time. It stays on your device and is never sent to us.
+            the same board opens next time. It stays on your device, is never sent to us, and you can
+            clear it at any time by clearing your browser's site data.
           </li>
           <li>
             <strong>The copy button.</strong> The "CODE: REKOJ" button puts the code on your clipboard.
@@ -147,162 +80,106 @@
           </li>
           <li>
             <strong>Technical data.</strong> Like any website, the server that hosts this site sees
-            the IP address and browser details of each request. That is used to deliver the pages,
-            prevent abuse and keep the site running. It is not built into a profile of you.
+            the IP address and browser details of each request. That is used to deliver the pages and
+            keep the site running, and it is not built into a profile of you.
           </li>
           <li>
-            <strong>Fonts.</strong> Pages load the Rubik typeface from Google Fonts, so your browser
-            requests it from Google's servers, and Google receives your IP address and browser details.
+            <strong>Fonts.</strong> The page loads the Rubik typeface from Google Fonts, so your
+            browser requests it from Google's servers, and Google receives your IP address and browser
+            details in the process. Google describes how it handles this in its own privacy policy.
           </li>
         </ul>
-
-        <h2>If you log in with Kick</h2>
-        <p>
-          Logging in sends you to Kick, which asks whether to share your basic profile with RekoJ (the
-          <code>user:read</code> permission). We receive and keep your <strong>Kick user ID, username and
-          profile picture</strong>, and when you first and last logged in. We never see your Kick password,
-          email address or anything else on your Kick account.
-        </p>
-
-        <h2>Rekoj points and the Points Store</h2>
-        <p>
-          Rekoj points are your loyalty points on RekoJ's Kick channel, run by <strong>BotRix</strong>. To show
-          your balance and hours watched, and to take or refund points when you order something, the site
-          sends your Kick username to BotRix. When you order an item we keep the order: what it was, its
-          price in points, when you ordered, its status, and any note from an admin about delivering it.
-          Admin point adjustments are logged with the username, the amount and the reason.
-        </p>
-
-        <h2>Wager raffles and linked casino accounts</h2>
-        <p>
-          To enter raffles you can link the username you play under at <strong>Razed</strong> or
-          <strong>Razed.IO</strong>. We keep the username you enter, whether an admin approved, rejected or
-          removed it, and any note they left. To work out raffle tickets, the site reads from the casino's
-          affiliate reporting how much that username wagered under the code REKOJ during each raffle's window.
-          When you join a raffle we keep your entry; when it is drawn we keep each entry's wager and tickets so
-          the result can be checked later. Admin actions on raffles (creating, editing, removing an entry,
-          drawing) are recorded in an activity log.
-        </p>
-
-        <h2>If you send us a message</h2>
-        <p>
-          The <a href="/contact">contact form</a> asks for a message and a way to reply (a Kick or Discord
-          username, or an email address), and optionally your name. We keep the message, the reply details
-          you give, when it was sent, and whether we've dealt with it. If you're logged in we also note your
-          Kick username. Messages are read in the RekoJ admin panel<span data-contact-relay-note>, and may
-          also be forwarded to a private RekoJ Discord channel so the team sees them quickly</span>.
-        </p>
-
-        <h2>Analytics</h2>
-        <p>
-          The site can use <strong>Google Analytics 4</strong> to count visits and see which pages are used.
-          It is only switched on if RekoJ has configured it, and even then it only loads <strong>after you
-          accept</strong> it in the banner shown on your first visit. If you decline, or never answer, no
-          analytics code runs and no analytics cookies are set. Your choice is saved in your browser (an
-          entry named <code>rekoj-consent</code>), and you can change it at any time with the
-          <button class="linklike" type="button" data-consent-reset>cookie settings</button> link.
-        </p>
 
         <h2>What is shown publicly</h2>
-        <ul>
-          <li>
-            <strong>Leaderboards</strong> show players' usernames (shortened and partly hidden, for
-            example "Admo***"), amounts wagered and prizes, for players who signed up at Razed or Razed.IO
-            under the code REKOJ. These figures come from the casinos' affiliate reporting and appear
-            whether or not a player has ever visited this site. The pictures beside them are the site's own
-            artwork, not players' avatars.
-          </li>
-          <li>
-            <strong>Raffle winners</strong> are shown by Kick username under Past Raffles and may be shown on
-            stream.
-          </li>
-          <li>
-            <strong>Store orders</strong> may appear on stream as an alert with your Kick username, profile
-            picture and the item.
-          </li>
-        </ul>
+        <p>
+          The leaderboards show players' usernames (shortened and partly hidden, for example
+          "Admo***"), avatars, amounts wagered and prizes for players who signed up at Razed or
+          Razed.IO under the code REKOJ. These figures come from the casinos' affiliate reporting.
+          That's the point of a public board, and it applies whether or not a player has ever visited
+          this site. Nothing else about any player is shown.
+        </p>
 
         <h2>Cookies</h2>
-        <ul>
-          <li><strong><code>rekoj_session</code></strong> keeps you logged in after you log in with Kick. It is
-            signed so it can't be forged, is not readable by page scripts, and lasts 30 days or until you log out.</li>
-          <li><strong><code>rekoj_oauth</code></strong> exists only for the few minutes it takes to log in with
-            Kick, to protect the sign-in against forgery. It is deleted when sign-in finishes.</li>
-          <li><strong>Google Analytics cookies</strong> (named <code>_ga</code> and <code>_ga_…</code>) are set only
-            if analytics is configured and you accept it.</li>
-        </ul>
-        <p>The first two are needed for logging in to work. The site sets no advertising or social tracking cookies.</p>
+        <p>
+          This site sets no cookies of its own: no sign-in cookies, no analytics cookies, and no
+          advertising or social tracking cookies. The one thing it stores is the leaderboard choice
+          described above, and that stays in your browser.
+        </p>
 
         <h2>Who else is involved</h2>
         <ul>
-          <li><strong>Kick</strong> handles logging in, under its own privacy policy.</li>
-          <li><strong>BotRix</strong> runs the channel points and receives your Kick username when the site checks or changes your points.</li>
-          <li><strong>Razed and Razed.IO</strong> provide the affiliate figures the leaderboards and raffle tickets are built from. We read figures from them; we don't send them anything about you.</li>
-          <li><strong>Vercel</strong> hosts the site, and <strong>Neon</strong> hosts the database where accounts, links, orders, raffles and messages are kept.</li>
-          <li><strong>Google</strong> serves the fonts and, only if you accept it, analytics.</li>
-          <li><strong>Discord</strong> may receive contact messages if forwarding to the team's channel is switched on.</li>
+          <li><strong>Razed and Razed.IO</strong> provide the affiliate figures the boards are built from. We read figures from them; we don't send them anything about you.</li>
+          <li><strong>Google Fonts</strong> serves the typeface, as described above.</li>
+          <li><strong>Our hosting provider</strong> runs the server the site is delivered from and handles requests on our behalf.</li>
           <li>
-            <strong>Kick, Discord and X links.</strong> Social links and "Visit" buttons take you to someone else's
-            site, under their privacy policy, not this one.
+            <strong>Kick, Discord and X.</strong> The social links take you to those platforms. Once
+            you follow a link, or any "Visit" button to a casino, you are on someone else's site and
+            under their privacy policy, not this one.
           </li>
         </ul>
         <p>Nobody else receives anything, and none of it is sold, rented or used for advertising.</p>
 
         <h2>How long it is kept</h2>
-        <ul>
-          <li>Your account, linked casino usernames, orders and raffle entries are kept while the site runs, so
-            orders can be delivered and raffle results checked, until you ask us to delete them.</li>
-          <li>Activity logs keep the most recent 1,000 to 2,000 entries; older entries drop off.</li>
-          <li>Contact messages are kept until we've dealt with them and no longer need them.</li>
-          <li>Server logs are kept only as long as our hosting provider needs them to run and protect the site.</li>
-        </ul>
+        <p>
+          Leaderboard standings are kept for the month they belong to, so results can be checked
+          after it closes. Server logs are kept only as long as our hosting provider needs them to
+          run and protect the site. Your saved leaderboard choice stays on your device until you
+          clear it.
+        </p>
 
         <h2>Your choices</h2>
         <ul>
-          <li><strong>Log out</strong> at any time from the account menu or your profile; this deletes the session cookie.</li>
-          <li><strong>See or delete your data.</strong> Ask through the <a href="/contact">contact form</a> and we'll tell
-            you what we hold about you, or delete it. Deleting your account also removes your linked usernames and
-            raffle entries; orders we still owe you are settled first.</li>
-          <li><strong>Hide your name from a leaderboard.</strong> Ask us and we'll hide your username from the public
-            board. Your standing, and any prize you win, is not affected.</li>
-          <li><strong>Your casino account is separate.</strong> Anything held by Razed or Razed.IO is theirs to manage,
-            under their own policies.</li>
+          <li>
+            <strong>Removing your name from the board.</strong> If you appear on a leaderboard and would
+            rather not, message us and we will hide your username from the public board. Your
+            standing, and any prize you win, is not affected.
+          </li>
+          <li>
+            <strong>Asking what we hold.</strong> Message us and we will tell you what, if anything, we
+            hold about you, or delete it.
+          </li>
+          <li>
+            <strong>Your casino account</strong> is a separate matter. Anything held by Razed or Razed.IO
+            is theirs to manage, under their own policies.
+          </li>
         </ul>
 
         <h2>Under 18s</h2>
         <p>
-          This site is for adults and is not directed at anyone under 18, or under the legal gambling age where
-          they live if that is higher. Please don't log in or link an account if that's you.
+          This site is for adults and is not directed at anyone under 18, or under the legal gambling
+          age where they live if that is higher.
         </p>
 
         <h2>Changes to this policy</h2>
-        <p>If what the site handles changes, this page changes with it, and the date at the top is updated.</p>
+        <p>
+          If what the site handles changes, this page changes with it, and the date at the top is
+          updated.
+        </p>
 
         <h2>Getting in touch</h2>
         <p>
-          The quickest way to reach us about anything on this page is the <a href="/contact">contact form</a>,
-          a direct message on X at <a href="https://x.com/rekojeu" target="_blank" rel="noopener">@rekojeu</a>, or a
-          ticket in the <a href="https://discord.com/invite/rekoj" target="_blank" rel="noopener">Discord</a>.
-          Anything about your Razed or Razed.IO account itself, such as deposits, withdrawals, verification or
-          self-exclusion, has to go to that casino's support team, because RekoJ has no access to it.
+          The quickest way to reach us about anything on this page is a direct message on X at
+          <a href="https://x.com/rekojeu" target="_blank" rel="noopener">@rekojeu</a>, or a ticket in the
+          <a href="https://discord.com/invite/rekoj" target="_blank" rel="noopener">Discord</a>.
+          Anything about your Razed or Razed.IO account itself, such as deposits, withdrawals, verification
+          or self-exclusion, has to go to that casino's support team, because RekoJ has no access to it.
         </p>
-        </div>
+      </div>
       </div>
     </main>
-  <!-- layout:footer -->
   <footer class="footer">
     <div class="footer__wrap">
       <div class="footer__top">
         <div class="footer__brand">
           <a class="brand" href="/" aria-label="RekoJ home">
-            <img class="brand__logo" src="/assets/shared/rekoj-logo.webp" alt="" width="54" height="38" />
-            <img class="brand__wordmark" src="/assets/shared/rekoj-wordmark.svg" alt="RekoJ" width="146" height="22" />
+            <img class="brand__logo" src="assets/shared/rekoj-logo.png" alt="" width="54" height="38" />
+            <img class="brand__wordmark" src="assets/shared/rekoj-wordmark.svg" alt="RekoJ" width="146" height="22" />
           </a>
 
           <div class="footer__marks">
             <span class="footer__age">18+</span>
             <a href="https://www.begambleaware.org" target="_blank" rel="noopener">
-              <img class="footer__aware" src="/assets/shared/gambleaware.webp" alt="BeGambleAware" width="163" height="24" loading="lazy" decoding="async" />
+              <img class="footer__aware" src="assets/shared/gambleaware.png" alt="BeGambleAware" width="163" height="24" />
             </a>
           </div>
 
@@ -314,16 +191,15 @@
         </div>
 
         <nav class="footer__col" aria-label="Explore">
-          <h2 class="footer__heading">Explore</h2>
-          <a href="/leaderboard">Leaderboard</a>
-          <a href="/raffles">Raffles</a>
-          <a href="/points-store">Points Store</a>
+          <h4>Explore</h4>
+          <a href="/?board=razed">Razed Leaderboard</a>
+          <a href="/?board=razedio">Razed.IO Leaderboard</a>
           <a href="https://www.razed.com/signup/?raf=rekoj" target="_blank" rel="noopener">Visit Razed</a>
           <a href="https://razed.io/?referralCode=rekoj" target="_blank" rel="noopener">Visit Razed.IO</a>
         </nav>
 
         <nav class="footer__col" aria-label="Social media">
-          <h2 class="footer__heading">Social Media</h2>
+          <h4>Social Media</h4>
           <a href="https://kick.com/rekoj" target="_blank" rel="noopener" style="--brand:#53fc18">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M1.333 0h8v5.333H12V2.667h2.667V0h8v8H20v2.667h-2.667v2.666H20V16h2.667v8h-8v-2.667H12v-2.666H9.333V24h-8Z"/></svg>
             Kick
@@ -344,14 +220,11 @@
         <nav class="footer__policies" aria-label="Policies">
           <a href="/terms">Terms of Service</a>
           <a href="/privacy">Privacy Policy</a>
-          <a href="/contact">Contact</a>
         </nav>
       </div>
     </div>
   </footer>
-  <!-- /layout:footer -->
   </div>
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="site.js"></script>
+  <script>document.querySelectorAll("[data-year]").forEach(function (n) { n.textContent = new Date().getFullYear(); });</script>
 </body>
 </html>

@@ -23,32 +23,6 @@
 const CONFIG = require("../data.js").REKOJ_CONFIG;
 
 const REQUEST_TIMEOUT_MS = 8000;
-const FRESH_MS = 60 * 1000; // both APIs cache for a minute anyway
-
-// Last good answer per board, kept for as long as this instance is warm.
-// Razed.IO allows one request per second, so a burst of visitors would
-// otherwise get 429s; this also lets a brief outage serve the last standings
-// instead of the page's sample rows.
-const lastGood = new Map();
-// One upstream request per board at a time; concurrent visitors share it.
-const inflight = new Map();
-
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-function send(res, status, payload, cacheControl) {
-  if (cacheControl) res.setHeader("Cache-Control", cacheControl);
-  res.statusCode = status;
-  return res.end(JSON.stringify(payload));
-}
-
-function sendStale(res, key, reason) {
-  const hit = lastGood.get(key);
-  if (!hit) return false;
-  console.warn("[leaderboard] %s %s; serving standings from %ss ago", key, reason, Math.round((Date.now() - hit.at) / 1000));
-  res.setHeader("X-Leaderboard-Stale", "1");
-  send(res, 200, hit.payload, "public, s-maxage=15, stale-while-revalidate=300");
-  return true;
-}
 
 /** First value present under any of `keys`. */
 function pick(row, keys) {
@@ -79,9 +53,7 @@ const FLAVOURS = {
   /*
    * razed.com — GET /player/api/v1/referrals/leaderboard
    *   ?referral_code=rekoj&from=2026-09-20&to=2026-10-31&top=10
-   * Note the singular `referral_code`; the plural form 404s. `to` is
-   * exclusive (from=to answers nothing), so the day after the period's last
-   * day is sent. Answers with
+   * Note the singular `referral_code`; the plural form 404s. Answers with
    *   { total, from, to, data: [ { username, referred_by_code, wagered } ] }
    */
   razed: {
@@ -91,7 +63,7 @@ const FLAVOURS = {
     params(url, { code, period, places }) {
       url.searchParams.set("referral_code", code);
       if (period.from) url.searchParams.set("from", period.from);
-      if (period.to) url.searchParams.set("to", new Date(Date.parse(period.to + "T00:00:00Z") + 86400000).toISOString().slice(0, 10));
+      if (period.to) url.searchParams.set("to", period.to);
       url.searchParams.set("top", String(places));
     },
     rows: (json) => (Array.isArray(json) ? json : (json && json.data) || []),
@@ -155,53 +127,33 @@ module.exports = async function handler(req, res) {
   const period = board.period || {};
   const code = process.env[prefix + "REFERRAL_CODE"] || board.referralCode || CONFIG.code.toLowerCase();
 
-  const cached = lastGood.get(key);
-  if (cached && Date.now() - cached.at < FRESH_MS) {
-    return send(res, 200, cached.payload, "public, s-maxage=60, stale-while-revalidate=300");
-  }
-
   const url = new URL(process.env[prefix + "API_URL"] || flavour.url);
   flavour.params(url, { code, period, places });
 
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), REQUEST_TIMEOUT_MS);
-  const request = () => fetch(url, {
-    headers: { [flavour.header]: secret, Accept: "application/json" },
-    signal: abort.signal,
-  });
-
-  const fetchOnce = async () => {
-    let r = await request();
-    if (r.status === 429) {
-      // Rate limited (Razed.IO: 1 request/second). Wait it out once.
-      await sleep(1100);
-      r = await request();
-    }
-    return { ok: r.ok, status: r.status, body: await r.text() };
-  };
 
   try {
-    let shared = inflight.get(key);
-    if (!shared) {
-      shared = fetchOnce().finally(() => inflight.delete(key));
-      inflight.set(key, shared);
-    }
-    const upstream = await shared;
-    const body = upstream.body;
+    const upstream = await fetch(url, {
+      headers: { [flavour.header]: secret, Accept: "application/json" },
+      signal: abort.signal,
+    });
+
+    const body = await upstream.text();
 
     if (!upstream.ok) {
       // Report the status, never the key or the full request URL.
       console.error("[leaderboard] %s upstream %s: %s", key, upstream.status, body.slice(0, 300));
-      if (sendStale(res, key, "upstream " + upstream.status)) return;
-      return send(res, 502, { error: "Upstream error", status: upstream.status });
+      res.statusCode = 502;
+      return res.end(JSON.stringify({ error: "Upstream error", status: upstream.status }));
     }
 
     let json;
     try {
       json = JSON.parse(body);
     } catch (err) {
-      if (sendStale(res, key, "upstream sent non-JSON")) return;
-      return send(res, 502, { error: "Upstream did not return JSON" });
+      res.statusCode = 502;
+      return res.end(JSON.stringify({ error: "Upstream did not return JSON" }));
     }
 
     // Razed.IO returns everyone who clicked the code, including players who
@@ -215,16 +167,15 @@ module.exports = async function handler(req, res) {
       .sort((a, b) => b.wagered - a.wagered)
       .slice(0, places);
 
-    const payload = { board: key, from: period.from, to: period.to, entries };
-    lastGood.set(key, { at: Date.now(), payload });
-
     // Cached at the edge for a minute, which is also how long both APIs cache.
-    return send(res, 200, payload, "public, s-maxage=60, stale-while-revalidate=300");
+    res.setHeader("Cache-Control", "public, s-maxage=60, stale-while-revalidate=300");
+    res.statusCode = 200;
+    return res.end(JSON.stringify({ board: key, from: period.from, to: period.to, entries }));
   } catch (err) {
     const reason = err && err.name === "AbortError" ? "Upstream timed out" : "Upstream unreachable";
     console.error("[leaderboard] %s %s", key, reason);
-    if (sendStale(res, key, reason)) return;
-    return send(res, 504, { error: reason });
+    res.statusCode = 504;
+    return res.end(JSON.stringify({ error: reason }));
   } finally {
     clearTimeout(timer);
   }

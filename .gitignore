@@ -6,6 +6,3 @@ node_modules
 .env
 .env.*
 !.env.example
-
-# Local data written by the dev server (accounts, orders, raffles)
-.data/

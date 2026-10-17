@@ -10,9 +10,17 @@
 
   /* ---------------- helpers ---------------- */
 
-  // Shared with the other pages (site.js).
-  var R = window.Rekoj;
-  var money = R.money, maskName = R.maskName, esc = R.esc, pad = R.pad;
+  function money(n, decimals) {
+    return Number(n || 0).toLocaleString("en-US", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    });
+  }
+
+  function maskName(name) {
+    if (!config.maskNames || !name) return name || "---";
+    return name.length <= 4 ? name + "***" : name.slice(0, 4) + "***";
+  }
 
   function el(tag, className, html) {
     var node = document.createElement(tag);
@@ -20,6 +28,14 @@
     if (html != null) node.innerHTML = html;
     return node;
   }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  function pad(n) { return n < 10 ? "0" + n : String(n); }
 
   // Players from the API arrive without a picture, so a place falls back to
   // the design's own avatar for that position.
@@ -47,30 +63,63 @@
 
   /* ---------------- data ---------------- */
 
-  function loadEntries(key) { return R.loadBoard(key); }
+  // Returns entries for a board. If `apiUrl` is set, fetches JSON from it.
+  // The API should return an array (or { entries: [...] }) of objects with
+  // name / avatar / wagered / prize — or provide `mapResponse(json)` on the
+  // board config to convert whatever shape your endpoint returns.
+  function loadEntries(key) {
+    var board = boards[key];
+    if (!board.apiUrl) return Promise.resolve(board.entries || []);
+
+    return fetch(board.apiUrl, { headers: { Accept: "application/json" } })
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (json) {
+        if (typeof board.mapResponse === "function") return board.mapResponse(json);
+        var entries = Array.isArray(json) ? json : json.entries || [];
+        return entries.length ? entries : board.entries || [];
+      })
+      .catch(function (err) {
+        console.warn("[rekoj] Failed to load " + key + " leaderboard, using static data.", err);
+        return board.entries || [];
+      });
+  }
 
   /* ---------------- rendering ---------------- */
 
   function renderPodium(key, entries) {
     var board = boards[key];
     var podium = $("podium");
+    podium.innerHTML = "";
 
-    var boxes = { 1: board.assets.box1st, 2: "assets/shared/box-2nd.webp", 3: "assets/shared/box-3rd.webp" };
+    var boxes = { 1: board.assets.box1st, 2: "assets/shared/box-2nd.png", 3: "assets/shared/box-3rd.png" };
     var gifts = { 1: board.assets.gift1st, 2: "assets/shared/gift-2nd.svg", 3: "assets/shared/gift-3rd.svg" };
 
-    var html = "";
     for (var place = 1; place <= 3; place++) {
       var e = entries[place - 1] || {};
-      html += R.podiumCard({
-        place: place,
-        entry: e,
-        box: boxes[place],
-        gift: gifts[place],
-        avatar: avatarFor(key, place, e),
-        prize: prizeFor(key, place),
-      });
+      var card = el("article", "card card--" + place);
+      card.setAttribute("aria-label", "Place " + place);
+      card.innerHTML =
+        '<img class="card__box" src="' + boxes[place] + '" alt="" width="281" height="349" />' +
+        '<div class="card__details">' +
+          '<div class="card__avatar">' +
+            '<div class="card__avatar-img">' +
+              '<img src="' + esc(avatarFor(key, place, e)) + '" alt="" loading="lazy" />' +
+            "</div>" +
+            '<span class="card__place">' + place + "</span>" +
+          "</div>" +
+          '<p class="card__name grad-text">' + esc(maskName(e.name)) + "</p>" +
+          '<div class="card__wager">' +
+            '<span class="card__wager-label grad-text">Wagered</span>' +
+            '<span class="card__wager-amount grad-text">$' + money(e.wagered, e.wagered >= 10000 ? 0 : 2) + "</span>" +
+          "</div>" +
+          '<p class="card__prize"><span class="d">$</span>' + money(prizeFor(key, place), 0) + "</p>" +
+          '<div class="card__tag"><img src="' + gifts[place] + '" alt="" /><span class="grad-text">Prize</span></div>' +
+        "</div>";
+      podium.appendChild(card);
     }
-    podium.innerHTML = html;
   }
 
   function renderRows(key, entries) {
@@ -226,12 +275,59 @@
     });
   }
 
+  /* ---------------- copy code ---------------- */
+
+  var toastTimer;
+  function toast(html) {
+    var t = $("toast");
+    t.innerHTML = html;
+    t.classList.add("is-visible");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove("is-visible"); }, 1800);
+  }
+
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) return navigator.clipboard.writeText(text);
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement("textarea");
+      ta.value = text;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy") ? resolve() : reject(); } catch (e) { reject(e); }
+      document.body.removeChild(ta);
+    });
+  }
+
+  function initCopy() {
+    var btn = $("copyCode");
+    btn.addEventListener("click", function () {
+      copyText(config.code).then(
+        function () {
+          btn.classList.add("is-copied");
+          setTimeout(function () { btn.classList.remove("is-copied"); }, 1200);
+          toast('Code <span class="accent">' + esc(config.code) + "</span> copied to clipboard");
+        },
+        function () { toast("Couldn't copy — the code is " + esc(config.code)); }
+      );
+    });
+  }
+
   /* ---------------- init ---------------- */
 
   function init() {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-code]"), function (n) {
+      n.textContent = config.code;
+    });
     $("copyCode").setAttribute("aria-label", "Copy code " + config.code);
+    Array.prototype.forEach.call(document.querySelectorAll("[data-year]"), function (n) {
+      n.textContent = new Date().getFullYear();
+    });
 
     initPicker();
+    initCopy();
 
     var params = new URLSearchParams(window.location.search);
     var fromUrl = params.get("board");

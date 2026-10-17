@@ -2,4 +2,4 @@ User-agent: *
 Allow: /
 Disallow: /api/
 
-Sitemap: https://rekoj.org/sitemap.xml
+Sitemap: https://rekoj.vercel.app/sitemap.xml

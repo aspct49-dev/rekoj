@@ -2,14 +2,10 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <!-- Page-change animation opt-in. Inline on purpose: Chrome decides as the
-       new page is revealed, and if this sat in styles.css a slow stylesheet
-       would silently cancel the transition. -->
-  <style>@view-transition{navigation:auto}@media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}</style>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Terms of Service | RekoJ</title>
   <meta name="description" content="The rules for the RekoJ leaderboards: who can take part, how standings are worked out, and how prizes are paid." />
-  <link rel="canonical" href="https://rekoj.org/terms" />
+  <link rel="canonical" href="https://rekoj.vercel.app/terms" />
   <meta name="theme-color" content="#0d1015" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
 
@@ -18,109 +14,46 @@
   <meta property="og:locale" content="en_US" />
   <meta property="og:title" content="Terms of Service | RekoJ" />
   <meta property="og:description" content="The rules for the RekoJ leaderboards: who can take part, how standings are worked out, and how prizes are paid." />
-  <meta property="og:url" content="https://rekoj.org/terms" />
+  <meta property="og:url" content="https://rekoj.vercel.app/terms" />
   <meta property="og:image:type" content="image/png" />
-  <meta property="og:image" content="https://rekoj.org/assets/shared/og-image.png" />
+  <meta property="og:image" content="https://rekoj.vercel.app/assets/shared/og-image.png" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
   <meta property="og:image:alt" content="The RekoJ logo" />
   <meta name="twitter:card" content="summary_large_image" />
   <meta name="twitter:site" content="@rekojeu" />
   <meta name="twitter:creator" content="@rekojeu" />
-  <meta name="twitter:image" content="https://rekoj.org/assets/shared/og-image.png" />
+  <meta name="twitter:image" content="https://rekoj.vercel.app/assets/shared/og-image.png" />
   <link rel="icon" type="image/png" href="assets/shared/rekoj-logo.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
   <link rel="preload" href="fonts/PPNeueCorp-NormalUltrabold.woff2" as="font" type="font/woff2" crossorigin />
   <link rel="stylesheet" href="styles.css" />
-  <script type="application/ld+json">
-{
-    "@context": "https://schema.org",
-    "@type": "BreadcrumbList",
-    "itemListElement": [
-      {
-        "@type": "ListItem",
-        "position": 1,
-        "name": "Home",
-        "item": "https://rekoj.org/"
-      },
-      {
-        "@type": "ListItem",
-        "position": 2,
-        "name": "Terms of Service",
-        "item": "https://rekoj.org/terms"
-      }
-    ]
-  }
-  </script>
 </head>
-<body data-board="razed" data-page="legal" class="is-legal">
+<body data-board="razed" class="is-legal">
   <div class="page">
-  <!-- layout:header -->
-  <header class="topbar">
-    <div class="topbar__inner">
-      <a class="brand" href="/" aria-label="RekoJ home">
-        <img class="brand__logo" src="/assets/shared/rekoj-logo.webp" alt="" width="54" height="38" />
-        <img class="brand__wordmark" src="/assets/shared/rekoj-wordmark.svg" alt="RekoJ" width="146" height="22" />
-      </a>
+    <header class="topbar">
+      <div class="topbar__inner">
+        <a class="brand" href="/" aria-label="RekoJ home">
+          <img class="brand__logo" src="assets/shared/rekoj-logo.png" alt="" width="54" height="38" />
+          <img class="brand__wordmark" src="assets/shared/rekoj-wordmark.svg" alt="RekoJ" width="146" height="22" />
+        </a>
 
-      <nav class="nav" aria-label="Main">
-        <a class="nav__item nav__item--home" href="/" data-nav="home">
-          <span class="nav__icon nav__icon--home">
-            <img class="nav__ico" src="/assets/nav/home.svg" alt="" width="20" height="18" />
-            <img class="nav__ico nav__ico--on" src="/assets/nav/home-active.svg" alt="" width="20" height="18" />
-          </span>
-          <span class="nav__label">HOME</span>
+        <a class="btn btn--dark nav-lb" href="/#leaderboard">
+          <img src="assets/shared/trophy-nav.svg" alt="" width="20" height="20" />
+          <span>LEADERBOARD</span>
         </a>
-        <a class="nav__item nav__item--leaderboard" href="/leaderboard" data-nav="leaderboard">
-          <span class="nav__icon nav__icon--trophy">
-            <img class="nav__ico" src="/assets/nav/trophy.svg" alt="" width="20" height="20" />
-            <img class="nav__ico nav__ico--on" src="/assets/nav/trophy-active.svg" alt="" width="20" height="20" />
-          </span>
-          <span class="nav__label">LEADERBOARD</span>
-        </a>
-        <a class="nav__item nav__item--raffles" href="/raffles" data-nav="raffles">
-          <span class="nav__icon nav__icon--ticket">
-            <img class="nav__ico" src="/assets/nav/ticket.svg" alt="" width="21" height="16" />
-            <img class="nav__ico nav__ico--on" src="/assets/nav/ticket-active.svg" alt="" width="21" height="16" />
-          </span>
-          <span class="nav__label">RAFFLES</span>
-        </a>
-        <a class="nav__item nav__item--store" href="/points-store" data-nav="store">
-          <span class="nav__icon nav__icon--bag">
-            <img class="nav__ico" src="/assets/nav/bag.svg" alt="" width="18" height="18" />
-            <img class="nav__ico nav__ico--on" src="/assets/nav/bag-active.svg" alt="" width="18" height="18" />
-          </span>
-          <span class="nav__label">POINTS STORE</span>
-        </a>
-      </nav>
 
-      <a class="btn nav-login" href="/api/auth/kick/login" data-login>LOGIN</a>
-      <div class="account" data-account hidden>
-        <button class="account__chip" type="button" aria-haspopup="menu" aria-expanded="false">
-          <img class="account__avatar" src="/assets/shared/rekoj-logo.webp" alt="" width="28" height="28" />
-          <span class="account__name"></span>
-          <span class="account__points" title="Rekoj points"><img src="/assets/store/coin.webp" alt="Points" width="16" height="16" /><span data-points>—</span></span>
-        </button>
-        <div class="account__menu" role="menu" hidden>
-          <a role="menuitem" href="/profile">Profile</a>
-          <a role="menuitem" href="/admin" data-admin-link hidden>Admin panel</a>
-          <button role="menuitem" type="button" data-logout>Log out</button>
-        </div>
+        <a class="btn nav-visit" href="https://www.razed.com/signup/?raf=rekoj" target="_blank" rel="noopener">
+          <span>VISIT</span>
+          <img class="nav-visit__logo" src="assets/shared/razed-logo-dark-sm.png" alt="Razed" width="61" height="12" />
+        </a>
       </div>
-    </div>
-  </header>
-  <!-- /layout:header -->
+    </header>
 
     <main class="legal">
       <div class="legal__wrap">
-        <nav class="crumbs" aria-label="Breadcrumb">
-          <ol>
-            <li><a href="/">Home</a></li>
-            <li><span aria-current="page">Terms of Service</span></li>
-          </ol>
-        </nav>
         <h1 class="legal__title">Terms of Service</h1>
         <p class="legal__lede">The rules for taking part in the RekoJ leaderboards. By using this site, you agree to them.</p>
         <p class="legal__updated">Last updated 22 September 2026</p>
@@ -248,20 +181,19 @@
       </div>
       </div>
     </main>
-  <!-- layout:footer -->
   <footer class="footer">
     <div class="footer__wrap">
       <div class="footer__top">
         <div class="footer__brand">
           <a class="brand" href="/" aria-label="RekoJ home">
-            <img class="brand__logo" src="/assets/shared/rekoj-logo.webp" alt="" width="54" height="38" />
-            <img class="brand__wordmark" src="/assets/shared/rekoj-wordmark.svg" alt="RekoJ" width="146" height="22" />
+            <img class="brand__logo" src="assets/shared/rekoj-logo.png" alt="" width="54" height="38" />
+            <img class="brand__wordmark" src="assets/shared/rekoj-wordmark.svg" alt="RekoJ" width="146" height="22" />
           </a>
 
           <div class="footer__marks">
             <span class="footer__age">18+</span>
             <a href="https://www.begambleaware.org" target="_blank" rel="noopener">
-              <img class="footer__aware" src="/assets/shared/gambleaware.webp" alt="BeGambleAware" width="163" height="24" loading="lazy" decoding="async" />
+              <img class="footer__aware" src="assets/shared/gambleaware.png" alt="BeGambleAware" width="163" height="24" />
             </a>
           </div>
 
@@ -273,16 +205,15 @@
         </div>
 
         <nav class="footer__col" aria-label="Explore">
-          <h2 class="footer__heading">Explore</h2>
-          <a href="/leaderboard">Leaderboard</a>
-          <a href="/raffles">Raffles</a>
-          <a href="/points-store">Points Store</a>
+          <h4>Explore</h4>
+          <a href="/?board=razed">Razed Leaderboard</a>
+          <a href="/?board=razedio">Razed.IO Leaderboard</a>
           <a href="https://www.razed.com/signup/?raf=rekoj" target="_blank" rel="noopener">Visit Razed</a>
           <a href="https://razed.io/?referralCode=rekoj" target="_blank" rel="noopener">Visit Razed.IO</a>
         </nav>
 
         <nav class="footer__col" aria-label="Social media">
-          <h2 class="footer__heading">Social Media</h2>
+          <h4>Social Media</h4>
           <a href="https://kick.com/rekoj" target="_blank" rel="noopener" style="--brand:#53fc18">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M1.333 0h8v5.333H12V2.667h2.667V0h8v8H20v2.667h-2.667v2.666H20V16h2.667v8h-8v-2.667H12v-2.666H9.333V24h-8Z"/></svg>
             Kick
@@ -303,14 +234,11 @@
         <nav class="footer__policies" aria-label="Policies">
           <a href="/terms">Terms of Service</a>
           <a href="/privacy">Privacy Policy</a>
-          <a href="/contact">Contact</a>
         </nav>
       </div>
     </div>
   </footer>
-  <!-- /layout:footer -->
   </div>
-  <div class="toast" id="toast" role="status" aria-live="polite"></div>
-  <script src="site.js"></script>
+  <script>document.querySelectorAll("[data-year]").forEach(function (n) { n.textContent = new Date().getFullYear(); });</script>
 </body>
 </html>

@@ -493,7 +493,7 @@
         var n = r.entriesCount != null ? r.entriesCount : (r.entries || []).length;
         R.confirm({
           title: "Delete this raffle?",
-          html: "<p><b>" + esc(r.game) + " · " + esc(r.prize) + "</b> and its " + plural(n, "entry", "entries") + " disappear from the site. This can't be undone.</p>",
+          html: "<p><b>" + esc(R.raffleLabel(r)) + "</b> and its " + plural(n, "entry", "entries") + " disappear from the site. This can't be undone.</p>",
           confirm: "Delete", danger: true,
         }).then(function (ok) {
           if (ok) return R.api("/api/admin/raffles/delete", { id: r.id }).then(function () { R.toast("Deleted."); refreshBadges(); go("raffles"); });
@@ -551,7 +551,7 @@
               var lead = r.state === "drawn" ? (r.winnersList || []).map(function (w) { return esc(w.username); }).join(", ") || "—"
                 : st && st.top ? esc(st.top.username) + ' <span class="admin-muted">' + money(st.top.tickets) + "</span>" : st ? "—" : "…";
               return '<tr class="admin-row" data-open="' + r.id + '" tabindex="0">' +
-                '<td><div class="raffle-cell"><img src="' + esc(img(r.thumb, C.raffleThumbs)) + '" alt="" loading="lazy" /><div><b>' + esc(r.game) + " · " + esc(r.prize) + "</b>" +
+                '<td><div class="raffle-cell"><img src="' + esc(img(r.thumb, C.raffleThumbs)) + '" alt="" loading="lazy" /><div><b>' + esc(R.raffleLabel(r)) + "</b>" +
                   (r.placeholder ? ' <span class="pill pill--muted">Placeholder</span>' : "") +
                   "<small>" + esc(ruleText(r)) + " · " + plural(r.winners, "winner", "winners") + "</small></div></div></td>" +
                 "<td>" + statePill(r) + "<small>" + timing(r) + "</small></td>" +
@@ -631,7 +631,7 @@
         '<section class="admin-card raffle-head">' +
           '<img class="raffle-head__thumb" src="' + esc(img(r.thumb, C.raffleThumbs)) + '" alt="" />' +
           '<div class="raffle-head__main">' +
-            '<h2 class="raffle-head__title">' + esc(r.game) + " · " + esc(r.prize) + " " + statePill(r) +
+            '<h2 class="raffle-head__title">' + esc(R.raffleLabel(r)) + " " + statePill(r) +
               (r.placeholder ? ' <span class="pill pill--muted">Placeholder from the design</span>' : "") + "</h2>" +
             '<p class="raffle-head__meta">' + timing(r) + " · " + plural(r.winners, "winner", "winners") + " · prize value " + dollars(r.value) + "</p>" +
             '<p class="raffle-head__meta">' + esc(ruleText(r)) + " · wagers count " + when(Date.parse(r.wagerFrom)) + " → " + when(Date.parse(r.endsAt)) +
@@ -768,8 +768,9 @@
       wagerFrom: new Date().toISOString(), endsAt: new Date(Date.now() + 7 * 86400000).toISOString(),
     };
     formDialog(r ? "Edit raffle" : "New raffle", [
-      { name: "game", label: "Game", type: "text", value: x.game, required: true, placeholder: "e.g. Wanted Dead or a Wild" },
-      { name: "prize", label: "Prize", type: "text", value: x.prize, required: true, placeholder: "e.g. $100 Bonus Buy" },
+      { name: "game", label: "Title", type: "text", value: x.game, required: true, placeholder: "e.g. Wanted Dead or a Wild, or $25 Free Balance" },
+      { name: "prize", label: "Subtitle (optional)", type: "text", value: x.prize, placeholder: "e.g. $100 Bonus Buy",
+        hint: "Shown under the title. Leave empty if the title already says what's won; a subtitle that only repeats the title is hidden." },
       { name: "value", label: "Prize value ($)", type: "number", value: x.value, hint: "Used by the Reward sort." },
       { name: "winners", label: "Number of winners", type: "number", value: x.winners, min: 1 },
       { name: "casino", label: "Casino (where wagers count)", type: "select", value: x.casino, options: CASINOS,

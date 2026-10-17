@@ -1337,6 +1337,8 @@ body[data-board="razedio"] .card--1 {
 .raffle__timer img { position: absolute; left: 5.43px; top: 1.87px; width: 12.1333px; height: 12.1333px; }
 .raffle__timer span { position: absolute; left: 21px; top: 2px; color: #dadada; font-weight: 600; font-size: 9px; line-height: 11px; letter-spacing: .27px; white-space: nowrap; }
 .raffle__title { left: 172px; top: 21px; width: 170px; text-align: center; color: #f2f2f2; font-weight: 600; font-size: 16px; line-height: 19px; white-space: nowrap; }
+/* No subtitle: the single line sits in the middle of the two-line space */
+.raffle__title.is-one-line { top: 30px; }
 .raffle__stat {
   left: 173px;
   width: 171px;

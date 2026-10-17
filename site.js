@@ -39,6 +39,22 @@
   function pad(n) { return n < 10 ? "0" + n : String(n); }
 
   /** "5D 9H 32M 51S" until `endsAt`; null once it has passed. */
+  /**
+   * A raffle's second line, or "" when it's empty or only repeats the title:
+   * "25$ FREE BALANCE" + "25$" shows one line; "Wanted Dead or Wild" +
+   * "$100 Bonus Buy" shows both. Compares whole words and numbers, so "$25"
+   * still shows under "$250 Free Balance".
+   */
+  function raffleSub(r) {
+    var words = function (s) { return String(s || "").toLowerCase().match(/[a-z0-9]+/g) || []; };
+    var sub = words(r.prize);
+    if (!sub.length) return "";
+    var title = words(r.game);
+    return sub.every(function (w) { return title.indexOf(w) !== -1; }) ? "" : String(r.prize).trim();
+  }
+  /** "Title · Subtitle", or just the title. */
+  function raffleLabel(r) { var s = raffleSub(r); return r.game + (s ? " · " + s : ""); }
+
   function shortCountdown(endsAt) {
     var s = Math.floor((new Date(endsAt).getTime() - Date.now()) / 1000);
     if (!(s > 0)) return null;
@@ -434,6 +450,8 @@
     toast: toast,
     copyText: copyText,
     podiumCard: podiumCard,
+    raffleSub: raffleSub,
+    raffleLabel: raffleLabel,
     loadBoard: loadBoard,
     api: api,
     me: me,

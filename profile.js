@@ -85,7 +85,7 @@
     return (
       '<li class="order">' +
         '<span class="order__pic order__pic--raffle"><img src="' + R.esc(thumb) + '" alt="" loading="lazy" /></span>' +
-        '<span class="order__main"><b>' + R.esc(r.game) + " · " + R.esc(r.prize) + "</b><small>" +
+        '<span class="order__main"><b>' + R.esc(R.raffleLabel(r)) + "</b><small>" +
           (r.state === "open" ? "Ends " + date(r.endsAt) : "Ended " + date(r.drawnAt || r.endsAt)) + " · " + R.money(r.entries, 0) + " entries" + t + "</small></span>" +
         '<span class="pill pill--' + label[1] + '">' + label[0] + "</span>" +
       "</li>"

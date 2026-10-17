@@ -59,7 +59,8 @@
     return "<p>" + bits.join(" ") + "</p>";
   }
   function myTickets(r) { return state.mine && state.mine.tickets && state.mine.tickets[r.id]; }
-  function titleHTML(r) { return R.esc(r.game) + "<br />" + R.esc(r.prize); }
+  function titleHTML(r) { var s = R.raffleSub(r); return R.esc(r.game) + (s ? "<br />" + R.esc(s) : ""); }
+  function oneLine(r) { return R.raffleSub(r) ? "" : " is-one-line"; }
   function thumbSrc(t) { return C.raffleThumbs[t] || t; }
 
   // Built-in raffles while the API can't be reached
@@ -91,7 +92,7 @@
             '<span data-ends="' + R.esc(r.endsAt) + '">' + (R.shortCountdown(r.endsAt) || "ENDED") + "</span></span>" +
           '<span class="raffle__rule"><b>' + R.esc(r.casinoName.toUpperCase()) + "</b>" + ruleShort(r) + "</span>" +
         "</div>" +
-        '<h2 class="raffle__title">' + titleHTML(r) + "</h2>" +
+        '<h2 class="raffle__title' + oneLine(r) + '">' + titleHTML(r) + "</h2>" +
         '<p class="raffle__stat raffle__stat--winners"><img src="/assets/raffles/icon-winners.svg" alt="" width="13" height="13" />' +
           plural(r.winners, "Winner", "Winners") + "</p>" +
         '<p class="raffle__stat raffle__stat--entries"><img src="/assets/raffles/icon-entries.svg" alt="" width="12" height="13" />' +
@@ -111,7 +112,7 @@
             "<span>" + endedLabel(r.drawnAt ? new Date(r.drawnAt).toISOString() : r.endsAt) + "</span></span>" +
         "</div>" +
         '<div class="past-raffle__info">' +
-          '<h3 class="past-raffle__title">' + titleHTML(r) + "</h3>" +
+          '<h3 class="past-raffle__title' + oneLine(r) + '">' + titleHTML(r) + "</h3>" +
           '<p class="past-raffle__stat past-raffle__stat--winners"><img src="/assets/raffles/icon-winners-sm.svg" alt="" width="11" height="11" />' +
             plural(r.winners, "Winner", "Winners") + "</p>" +
           '<p class="past-raffle__stat past-raffle__stat--entries"><img src="/assets/raffles/icon-entries-sm.svg" alt="" width="11" height="12" />' +
@@ -205,7 +206,7 @@
         if (!link || link.status !== "approved") return linkDialog(r, link);
         var t = myTickets(r);
         return R.confirm({
-          title: "Join " + r.game + " · " + r.prize + "?",
+          title: "Join " + R.raffleLabel(r) + "?",
           html: rulesHTML(r) +
             '<p class="dialog__muted">Linked as <b>' + R.esc(link.username) + "</b> on " + R.esc(r.casinoName) + "." +
             (t && t.tickets !== undefined ? " So far: " + dollars(t.wagered) + " wagered = <b>" + plural(t.tickets, "ticket", "tickets") + "</b>." : "") + "</p>",
@@ -237,7 +238,7 @@
     if (!r) return;
     var winners = r.winnersList || [];
     R.confirm({
-      title: r.game + " · " + r.prize,
+      title: R.raffleLabel(r),
       html: winners.length
         ? '<p class="dialog__muted">' + plural(r.entries, "entry", "entries") + (r.totalTickets ? " · " + plural(r.totalTickets, "ticket", "tickets") : "") + " · drawn " +
             new Date(r.drawnAt || r.endsAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) + "</p>" +

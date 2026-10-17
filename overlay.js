@@ -88,7 +88,7 @@
         '<section class="ov-panel ov-raffle">' +
           '<img class="ov-raffle__thumb" src="' + esc(thumb) + '" alt="" />' +
           '<div class="ov-raffle__main">' + brand() +
-            '<h1 class="ov-raffle__title">' + esc(r.game) + "<span>" + esc(r.prize) + "</span></h1>" +
+            '<h1 class="ov-raffle__title">' + esc(r.game) + (R.raffleSub(r) ? "<span>" + esc(R.raffleSub(r)) + "</span>" : "") + "</h1>" +
             (r.state === "drawn" ? "" : '<p class="ov-raffle__rule"><b>$' + R.money(r.perDollars, r.perDollars % 1 ? 2 : 0) + "</b> wagered on " + esc(r.casinoName) +
               " = <b>" + R.money(r.ticketsPer, 0) + " ticket" + (r.ticketsPer === 1 ? "" : "s") + "</b></p>") + body +
           "</div>" +

@@ -143,11 +143,18 @@ async function logPoints(entry) {
   }
 }
 
+/** "Title · Subtitle", leaving out a subtitle that only repeats the title (same rule as site.js). */
+function raffleLabel(r) {
+  const words = (s) => String(s || "").toLowerCase().match(/[a-z0-9]+/g) || [];
+  const sub = words(r.prize), title = words(r.game);
+  return r.game + (sub.length && !sub.every((w) => title.includes(w)) ? " · " + String(r.prize).trim() : "");
+}
+
 /** Raffle activity for the admin panel: created, edited, joined, drawn, … */
 async function logRaffle(r, type, by, detail) {
   try {
     await store.update("raffleLog", (log) => {
-      log.unshift({ at: Date.now(), raffleId: r.id, game: r.game + " · " + r.prize, type, by: by || null, detail: detail || "" });
+      log.unshift({ at: Date.now(), raffleId: r.id, game: raffleLabel(r), type, by: by || null, detail: detail || "" });
       if (log.length > 2000) log.length = 2000;
     });
   } catch (err) {
@@ -693,8 +700,8 @@ async function adminOrderDecide(req, res) {
 
 function cleanRaffle(input, existing) {
   const game = cleanText(input.game, 60);
-  const prize = cleanText(input.prize, 60);
-  if (!game || !prize) fail(400, "Give the raffle a game and a prize.");
+  const prize = cleanText(input.prize, 60); // optional subtitle
+  if (!game) fail(400, "Give the raffle a title.");
   const value = cleanInt(input.value, 0, 10000000);
   const winners = cleanInt(input.winners, 1, 100);
   if (value === null) fail(400, "Prize value must be a whole number of dollars.");

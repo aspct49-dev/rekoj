@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en" class="is-overlay">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex, nofollow" />
+  <title>RekoJ overlay</title>
+  <!--
+    Stream overlays for OBS (Browser Source). Transparent pages that follow
+    the live data:
+      /overlay/leaderboard?board=razed|razedio[&top=5]
+      /overlay/raffle[?id=<raffle id>]
+      /overlay/alerts[?demo=1]
+  -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="preload" href="/fonts/PPNeueCorp-NormalUltrabold.woff2" as="font" type="font/woff2" crossorigin />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body data-board="razed" data-page="overlay">
+  <main class="ov" id="overlay" aria-live="polite"></main>
+  <script src="/data.js"></script>
+  <script src="/content.js"></script>
+  <script src="/site.js"></script>
+  <script src="/overlay.js"></script>
+</body>
+</html>

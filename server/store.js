@@ -181,4 +181,47 @@ async function update(table, fn) {
   return usePg() ? pgUpdate(table, fn) : fileUpdate(table, fn);
 }
 
-module.exports = { read, update, newId, StoreUnavailable, storageKind: () => (usePg() ? "postgres" : process.env.VERCEL ? "none" : "files") };
+/* ---------------------------------------------------------------- uploaded images */
+
+// Pictures uploaded in the admin panel (store items, raffle thumbnails). Kept
+// in their own table so reading the store or raffles never loads image data.
+let imagesReady = null;
+function ensureImages() {
+  if (!imagesReady) {
+    imagesReady = sql()`CREATE TABLE IF NOT EXISTS rekoj_images (
+      id text PRIMARY KEY, mime text NOT NULL, data text NOT NULL, created_at timestamptz NOT NULL DEFAULT now()
+    )`.catch((err) => { imagesReady = null; throw err; });
+  }
+  return imagesReady;
+}
+const imageFile = (id) => path.join(DATA_DIR, "images", id + ".json");
+
+/** Save an image (buf: Buffer). */
+async function putImage(id, mime, buf) {
+  if (usePg()) {
+    await ensureImages();
+    await sql()`INSERT INTO rekoj_images (id, mime, data) VALUES (${id}, ${mime}, ${buf.toString("base64")}) ON CONFLICT (id) DO NOTHING`;
+    return;
+  }
+  if (!writable()) throw new StoreUnavailable();
+  await fsp.mkdir(path.join(DATA_DIR, "images"), { recursive: true });
+  await fsp.writeFile(imageFile(id), JSON.stringify({ mime, data: buf.toString("base64") }));
+}
+
+/** { mime, buf } or null. */
+async function getImage(id) {
+  if (usePg()) {
+    await ensureImages();
+    const rows = await sql()`SELECT mime, data FROM rekoj_images WHERE id = ${id}`;
+    return rows.length ? { mime: rows[0].mime, buf: Buffer.from(rows[0].data, "base64") } : null;
+  }
+  try {
+    const x = JSON.parse(await fsp.readFile(imageFile(id), "utf8"));
+    return { mime: x.mime, buf: Buffer.from(x.data, "base64") };
+  } catch (e) {
+    if (e.code === "ENOENT") return null;
+    throw e;
+  }
+}
+
+module.exports = { read, update, newId, putImage, getImage, StoreUnavailable, storageKind: () => (usePg() ? "postgres" : process.env.VERCEL ? "none" : "files") };

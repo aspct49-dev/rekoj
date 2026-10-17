@@ -8,6 +8,7 @@
  *   GET  /api/overlay/raffle?id=        a raffle for the stream overlay
  *   GET  /api/overlay/alerts            latest store redemptions, for the alert overlay
  *   POST /api/contact        {name, reply, topic, message, website, startedAt}   the contact form
+ *   GET  /api/image/<id>                a picture uploaded in the admin panel
  * Signed in
  *   POST /api/store/redeem   {itemId}   spend points on an item (an order an admin fulfils)
  *   GET  /api/raffles/mine              your linked casino accounts and tickets in open raffles
@@ -33,6 +34,7 @@
  *                                       POST /api/admin/links/manual  {kick, casino, username, force}
  *                                       POST /api/admin/links/check   {id}   look it up under the code again
  *   GET  /api/admin/messages            POST /api/admin/messages      {id, action: done|reopen|delete}
+ *   POST /api/admin/images              {data: data-URL}  upload a picture → {url}
  *   GET  /api/admin/users
  *   GET  /api/admin/points?name=        POST /api/admin/points        {name, delta, reason}
  * Auth: see kick.js.
@@ -63,7 +65,9 @@ const CODE = require("../data.js").REKOJ_CONFIG.code;
 
 /* ---------------------------------------------------------------- shapes */
 
-function isUrl(v) { return /^https:\/\/[^\s"'<>]+$/i.test(String(v || "")); }
+function isUrl(v) { return /^https:\/\/[^\s"'<>]+$/i.test(String(v || "")) || isUploaded(v); }
+/** A picture uploaded in the admin panel, served by this site. */
+function isUploaded(v) { return /^\/api\/image\/[0-9a-f-]{36}$/.test(String(v || "")); }
 const round2 = (n) => Math.round(n * 100) / 100;
 
 function raffleState(r, now) {
@@ -624,7 +628,7 @@ function cleanItem(input, existing) {
   if (cost === null) fail(400, "Price must be a whole number of points.");
   const tier = TIERS.includes(input.tier) ? input.tier : "blue";
   const image = cleanText(input.image, 500);
-  if (!["xbox", "af1", "keyboard", "bonusbuy"].includes(image) && !isUrl(image)) fail(400, "Pick a picture or paste an https:// image link.");
+  if (!["xbox", "af1", "keyboard", "bonusbuy"].includes(image) && !isUrl(image)) fail(400, "Pick a picture, upload one, or paste an https:// image link.");
   let stock = null;
   if (input.stock !== null && input.stock !== "" && input.stock !== undefined) {
     stock = cleanInt(input.stock, 0, 1000000);
@@ -700,7 +704,7 @@ function cleanRaffle(input, existing) {
   const wagerFrom = new Date(input.wagerFrom);
   if (isNaN(wagerFrom.getTime())) fail(400, "Pick when wagering starts to count.");
   const thumb = cleanText(input.thumb, 500);
-  if (!["wanted", "gates", "sweet-bonanza"].includes(thumb) && !isUrl(thumb)) fail(400, "Pick a thumbnail or paste an https:// image link.");
+  if (!["wanted", "gates", "sweet-bonanza"].includes(thumb) && !isUrl(thumb)) fail(400, "Pick a thumbnail, upload one, or paste an https:// image link.");
 
   const casino = cleanCasino(input.casino);
   const perDollars = cleanNum(input.perDollars, 0.01, 10000000);
@@ -1093,6 +1097,44 @@ async function adminMessageAction(req, res) {
   return json(res, 200, { ok: true });
 }
 
+/* ---------------------------------------------------------------- images */
+
+const IMAGE_TYPES = {
+  "image/webp": (b) => b.length > 12 && b.toString("ascii", 0, 4) === "RIFF" && b.toString("ascii", 8, 12) === "WEBP",
+  "image/png": (b) => b.length > 8 && b[0] === 0x89 && b.toString("ascii", 1, 4) === "PNG",
+  "image/jpeg": (b) => b.length > 3 && b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff,
+  "image/gif": (b) => b.length > 6 && b.toString("ascii", 0, 3) === "GIF",
+};
+const MAX_IMAGE_BYTES = 180 * 1024;
+
+/** Admin upload: { data: "data:image/webp;base64,…" } → { url: "/api/image/<id>" } */
+async function adminImageUpload(req, res) {
+  requireAdmin(req);
+  const { data } = await readJson(req);
+  const m = /^data:(image\/(?:webp|png|jpeg|gif));base64,([A-Za-z0-9+/=]+)$/.exec(String(data || ""));
+  if (!m) fail(400, "Upload a PNG, JPEG, WebP or GIF image.");
+  const buf = Buffer.from(m[2], "base64");
+  if (!buf.length) fail(400, "That image is empty.");
+  if (buf.length > MAX_IMAGE_BYTES) fail(413, "That image is too big even after shrinking. Try a smaller one.");
+  // The bytes must really be the type they claim (no SVG or HTML sneaking in)
+  if (!IMAGE_TYPES[m[1]](buf)) fail(400, "That file isn't a valid " + m[1].slice(6).toUpperCase() + " image.");
+  const id = store.newId();
+  await store.putImage(id, m[1], buf);
+  return json(res, 200, { url: "/api/image/" + id });
+}
+
+async function serveImage(req, res, id) {
+  const img = await store.getImage(id);
+  if (!img) return json(res, 404, { error: "Image not found." });
+  res.statusCode = 200;
+  res.setHeader("Content-Type", img.mime);
+  res.setHeader("Content-Length", img.buf.length);
+  // Ids are random and an image never changes, so it can be cached for good
+  res.setHeader("Cache-Control", "public, max-age=31536000, s-maxage=31536000, immutable");
+  res.setHeader("Content-Security-Policy", "default-src 'none'; sandbox");
+  return res.end(img.buf);
+}
+
 async function adminUsers(req, res) {
   requireAdmin(req);
   const [users, orders, links] = await Promise.all([store.read("users"), store.read("redemptions"), store.read("links")]);
@@ -1167,6 +1209,7 @@ const ROUTES = {
   "POST /api/admin/links": adminLinkDecide,
   "POST /api/admin/links/manual": adminLinkManual,
   "POST /api/admin/links/check": adminLinkCheck,
+  "POST /api/admin/images": adminImageUpload,
   "GET /api/admin/users": adminUsers,
   "GET /api/admin/points": adminPointsLookup,
   "POST /api/admin/points": adminPointsAdjust,
@@ -1179,7 +1222,8 @@ module.exports._test = { ticketsFor, rulesOf, weightedPicks, cleanMessage };
 async function serveApi(req, res) {
   const url = new URL(req.url, "http://localhost");
   const path = url.pathname.replace(/\/+$/, "");
-  const handler = ROUTES[req.method + " " + path];
+  const image = req.method === "GET" && /^\/api\/image\/([0-9a-f-]{36})$/.exec(path);
+  const handler = image ? (rq, rs) => serveImage(rq, rs, image[1]) : ROUTES[req.method + " " + path];
   if (!handler) return json(res, 404, { error: "Not found." });
   if (req.method === "POST" && !sameOrigin(req)) return json(res, 403, { error: "Cross-site request refused." });
   try {

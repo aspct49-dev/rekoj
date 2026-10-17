@@ -55,11 +55,17 @@
         "</form>";
       document.body.appendChild(d);
 
-      // image pickers: preset or custom link
+      // image pickers: a built-in picture, an uploaded one, or a link
       Array.prototype.forEach.call(d.querySelectorAll("[data-imagepick]"), function (sel) {
-        var url = d.querySelector('[name="' + sel.getAttribute("data-imagepick") + '__url"]');
-        var sync = function () { url.closest(".form__row").hidden = sel.value !== "__url"; };
+        var name = sel.getAttribute("data-imagepick");
+        var url = d.querySelector('[name="' + name + '__url"]');
+        var upRow = d.querySelector('[data-upload-row="' + name + '"]');
+        var sync = function () {
+          url.closest(".form__row").hidden = sel.value !== "__url";
+          upRow.hidden = sel.value !== "__upload";
+        };
         sel.addEventListener("change", sync); sync();
+        wireUpload(d, name);
       });
 
       d.addEventListener("close", function () {
@@ -68,7 +74,10 @@
         fields.forEach(function (f) {
           var el = d.querySelector('[name="' + f.name + '"]');
           if (f.type === "checkbox") out[f.name] = el.checked;
-          else if (f.type === "imagepick") out[f.name] = el.value === "__url" ? d.querySelector('[name="' + f.name + '__url"]').value.trim() : el.value;
+          else if (f.type === "imagepick") {
+            out[f.name] = el.value === "__url" ? d.querySelector('[name="' + f.name + '__url"]').value.trim()
+              : el.value === "__upload" ? d.querySelector('[name="' + f.name + '__uploaded"]').value : el.value;
+          }
           else if (f.type === "datetime") out[f.name] = el.value ? new Date(el.value).toISOString() : "";
           else out[f.name] = el.value;
         });
@@ -96,12 +105,26 @@
     }
     if (f.type === "imagepick") {
       var preset = f.options.some(function (o) { return o[0] === v; });
+      var uploaded = /^\/api\/image\//.test(v);
+      var linked = v && !preset && !uploaded;
       return '<div class="form__row">' + label + '<select id="' + id + '" name="' + f.name + '" data-imagepick="' + f.name + '">' +
           f.options.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === v ? " selected" : "") + ">" + esc(o[1]) + "</option>"; }).join("") +
-          '<option value="__url"' + (!preset && v ? " selected" : "") + ">Custom image link…</option>" +
+          '<option value="__upload"' + (uploaded ? " selected" : "") + ">Upload an image…</option>" +
+          '<option value="__url"' + (linked ? " selected" : "") + ">Custom image link…</option>" +
         "</select>" + hint + "</div>" +
+        '<div class="form__row form__upload" data-upload-row="' + f.name + '">' +
+          '<label class="form__label" for="' + id + '_file">Image file</label>' +
+          '<div class="upload">' +
+            '<img class="upload__preview" data-upload-preview alt="" ' + (uploaded ? 'src="' + esc(v) + '"' : "hidden") + " />" +
+            '<div class="upload__side">' +
+              '<input id="' + id + '_file" type="file" accept="image/png,image/jpeg,image/webp,image/gif" data-upload-file />' +
+              '<small class="form__hint" data-upload-status>' + (uploaded ? "Current picture. Choose a file to replace it." : "PNG, JPEG, WebP or GIF. It's resized and converted for the web automatically.") + "</small>" +
+            "</div>" +
+          "</div>" +
+          '<input type="hidden" name="' + f.name + '__uploaded" value="' + esc(uploaded ? v : "") + '" />' +
+        "</div>" +
         '<div class="form__row"><label class="form__label" for="' + id + '_url">Image link (https://)</label>' +
-        '<input id="' + id + '_url" name="' + f.name + '__url" type="url" placeholder="https://…" value="' + esc(preset ? "" : v) + '" /></div>';
+        '<input id="' + id + '_url" name="' + f.name + '__url" type="url" placeholder="https://…" value="' + esc(linked ? v : "") + '" /></div>';
     }
     var type = f.type === "datetime" ? "datetime-local" : f.type === "number" ? "number" : "text";
     if (f.type === "datetime" && v) {
@@ -111,6 +134,68 @@
     return '<div class="form__row">' + label + '<input id="' + id + '" name="' + f.name + '" type="' + type + '" value="' + esc(v) + '"' +
       (f.placeholder ? ' placeholder="' + esc(f.placeholder) + '"' : "") + (f.required ? " required" : "") +
       (f.type === "number" ? ' step="' + (f.step || 1) + '" min="' + (f.min == null ? "" : f.min) + '"' : "") + " />" + hint + "</div>";
+  }
+
+  /* ---------------- image upload ---------------- */
+
+  var MAX_UPLOAD = 170 * 1024; // the server takes up to 180 KB
+
+  /** Shrink to at most 640px on the long side and encode as WebP under MAX_UPLOAD. */
+  function prepareImage(file) {
+    return new Promise(function (resolve, reject) {
+      if (!/^image\/(png|jpeg|webp|gif)$/.test(file.type)) return reject(new Error("Choose a PNG, JPEG, WebP or GIF image."));
+      var img = new Image();
+      var src = URL.createObjectURL(file);
+      img.onload = function () {
+        URL.revokeObjectURL(src);
+        var attempt = function (maxSide, quality) {
+          var k = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+          var c = document.createElement("canvas");
+          c.width = Math.max(1, Math.round(img.naturalWidth * k));
+          c.height = Math.max(1, Math.round(img.naturalHeight * k));
+          c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+          var url = c.toDataURL("image/webp", quality);
+          if (url.indexOf("data:image/webp") !== 0) url = c.toDataURL("image/png"); // browsers without WebP encoding
+          var bytes = Math.ceil((url.length - url.indexOf(",") - 1) * 3 / 4);
+          if (bytes <= MAX_UPLOAD) return resolve(url);
+          if (quality > 0.55) return attempt(maxSide, quality - 0.1);
+          if (maxSide > 240) return attempt(Math.round(maxSide * 0.75), 0.8);
+          reject(new Error("That image is too detailed to shrink enough. Try another one."));
+        };
+        attempt(640, 0.85);
+      };
+      img.onerror = function () { URL.revokeObjectURL(src); reject(new Error("That file couldn't be read as an image.")); };
+      img.src = src;
+    });
+  }
+
+  function wireUpload(d, name) {
+    var row = d.querySelector('[data-upload-row="' + name + '"]');
+    var file = row.querySelector("[data-upload-file]");
+    var status = row.querySelector("[data-upload-status]");
+    var preview = row.querySelector("[data-upload-preview]");
+    var hidden = d.querySelector('[name="' + name + '__uploaded"]');
+    var save = d.querySelector(".dialog__btn--primary");
+    file.addEventListener("change", function () {
+      var f = file.files && file.files[0];
+      if (!f) return;
+      save.disabled = true;
+      status.classList.remove("is-error");
+      status.textContent = "Uploading…";
+      prepareImage(f).then(function (dataUrl) {
+        preview.src = dataUrl;
+        preview.hidden = false;
+        return R.api("/api/admin/images", { data: dataUrl });
+      }).then(function (res) {
+        hidden.value = res.url;
+        status.textContent = "Uploaded. Save to use it.";
+      }).catch(function (err) {
+        hidden.value = "";
+        preview.hidden = true;
+        status.classList.add("is-error");
+        status.textContent = err.message;
+      }).then(function () { save.disabled = false; });
+    });
   }
 
   /* ---------------- tabs ---------------- */

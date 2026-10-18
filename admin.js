@@ -991,9 +991,14 @@
 
   var pointsName = "";
   views.points = function () {
-    R.api("/api/admin/points" + (pointsName ? "?name=" + encodeURIComponent(pointsName) : "")).then(function (d) {
+    Promise.all([
+      R.api("/api/admin/points" + (pointsName ? "?name=" + encodeURIComponent(pointsName) : "")),
+      R.api("/api/admin/earnings").catch(function () { return null; }),
+    ]).then(function (both) {
+      var d = both[0], earn = both[1];
       var v = d.viewer;
       panel.innerHTML =
+        (earn ? earnCard(earn) : "") +
         '<div class="admin-grid">' +
           '<section class="admin-card"><h2 class="admin-card__title">Look up a viewer</h2>' +
             '<form class="inline-form" data-lookup><input name="name" type="text" placeholder="Kick username" value="' + esc(pointsName) + '" required />' +
@@ -1013,6 +1018,16 @@
           "</section>" +
         "</div>";
 
+      var run = panel.querySelector("[data-earn-run]");
+      if (run) run.addEventListener("click", function () {
+        run.disabled = true;
+        run.textContent = "Crediting…";
+        R.api("/api/admin/earnings/run", {}).then(function (r) {
+          var s = r.summary;
+          R.toast(s.points ? "Paid " + money(s.points) + " points to " + money(s.paid) + " player" + (s.paid === 1 ? "" : "s") + "." : "Nobody was owed anything right now.");
+          views.points();
+        }).catch(fail).then(function () { run.disabled = false; run.textContent = "Credit now"; });
+      });
       panel.querySelector("[data-lookup]").addEventListener("submit", function (e) {
         e.preventDefault();
         pointsName = e.target.name.value.trim();
@@ -1036,6 +1051,24 @@
       });
     }).catch(fail);
   };
+
+  function earnCard(e) {
+    var rules = Object.keys(e.rules || {}).map(function (c) {
+      return esc(CASINO_NAME[c] || c) + ": " + money(e.rules[c].points) + " points per " + dollars(e.rules[c].per) + " wagered";
+    }).join(" · ") || "No wager rules set (content.js → earn.wager).";
+    var last = e.lastRun;
+    return '<section class="admin-card admin-earn"><h2 class="admin-card__title">Wager points <span class="admin-muted">' + rules + "</span></h2>" +
+      '<p class="admin-muted">Paid automatically into BotRix for approved links, per calendar month, counted from the day the link was approved: when a player opens their profile or the store, ' +
+        (e.cron ? "and every day at 06:00 UTC." : "and daily once <b>CRON_SECRET</b> is set in Vercel.") + "</p>" +
+      '<div class="admin-toolbar admin-toolbar--tight"><button class="abtn abtn--primary" type="button" data-earn-run>Credit now</button>' +
+        '<span class="admin-muted">' + (last ? "Last run " + when(last.at) + " by " + esc(last.by) + ": " + money(last.points) + " points to " + money(last.paid) + " of " + money(last.players) + " players" +
+          (last.problems && last.problems.length ? ' · <span class="admin-warn">' + money(last.problems.length) + " problem(s): " + esc(last.problems.slice(0, 2).join("; ")) + "</span>" : "") : "Not run yet.") + "</span></div>" +
+      (e.players.length ? '<ul class="mini-list">' + e.players.slice(0, 8).map(function (p) {
+        var m = p.months.slice().sort(function (a, b) { return a.slot < b.slot ? 1 : -1; })[0] || {};
+        return "<li><b>" + esc(p.kickName) + "</b> " + money(p.credited) + " points in total<small>" + (m.slot ? esc(m.slot.replace(":", " ")) + ": " + dollars(m.wagered || 0) + " wagered, " + money(m.credited || 0) + " points" : "") + "</small></li>";
+      }).join("") + "</ul>" : '<p class="admin-muted">Nobody has earned wager points yet.</p>') +
+    "</section>";
+  }
 
   /* ---------------- players ---------------- */
 

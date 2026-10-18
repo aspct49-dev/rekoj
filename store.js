@@ -153,6 +153,40 @@
     }, function () {});
   }
 
+  /* ---------------- how to earn ---------------- */
+
+  function earnSection() {
+    var E = C.earn || {};
+    var box = document.getElementById("earn");
+    if (!box) return;
+    var set = function (sel, text) { var el = box.querySelector(sel); if (el) el.textContent = text; };
+    var per = E.pointsPerDollar || 100;
+    set("[data-earn-rate]", R.money(per, 0) + " points = $1");
+    if (E.watch) {
+      set("[data-earn-watch-rate]", R.money(E.watch.points, 0) + " point" + (E.watch.points === 1 ? "" : "s") + " every " + E.watch.everyMinutes + " min");
+      set("[data-earn-watch-sub]", "Subscribers earn " + R.money(E.watch.subPoints, 0) + " points");
+      var hour = 60 / E.watch.everyMinutes * E.watch.points;
+      set("[data-earn-watch-hour]", R.money(hour, 0) + " points ($" + R.money(hour / per, 2) + ") for every hour you watch");
+    }
+    var rule = E.wager && E.wager.razed;
+    var card = box.querySelector("[data-earn-wager]");
+    if (!rule) { card.hidden = true; return; }
+    set("[data-earn-wager-rate]", R.money(rule.points, 0) + " points per $" + R.money(rule.per, 0) + " wagered");
+    set("[data-earn-wager-value]", "That's $" + R.money(rule.points / per, 2) + " in points for every $" + R.money(rule.per / 1000, 0) + "k");
+    // Signed in with a linked account: their progress this month
+    R.me().then(function (me) {
+      if (!me || !me.user) return;
+      return R.api("/api/me/earnings").then(function (d) {
+        var html = R.earnProgress(d);
+        var me2 = card.querySelector("[data-earn-me]");
+        me2.innerHTML = html || '<p class="earn-card__hint">You\'re logged in. <a href="/profile#links">Link your Razed username</a> to start earning.</p>';
+        me2.hidden = false;
+        if (d.months && d.months.some(function (m) { return m.credited; })) R.refreshPoints && R.refreshPoints();
+      });
+    }).catch(function () {});
+  }
+  earnSection();
+
   if (!C.storeOpen) return comingSoon();
   render();
   load();

@@ -85,5 +85,11 @@
       "source": "/overlay/:kind",
       "destination": "/overlay"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/wager-points",
+      "schedule": "0 6 * * *"
+    }
   ]
 }

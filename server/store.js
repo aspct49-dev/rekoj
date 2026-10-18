@@ -40,6 +40,7 @@ function defaults(table) {
     case "links": return [];
     case "raffleLog": return [];
     case "messages": return [];
+    case "earnings": return {};
     case "shop":
       return C.store.map((item, i) => ({
         id: newId(), name: item.name, cost: item.cost, tier: item.tier, image: item.image,

@@ -16,6 +16,7 @@
  *   GET  /api/me/activity               your orders, raffle entries, wins and links
  *   POST /api/me/links       {casino, username}   ask to link a casino username
  *   POST /api/me/links/cancel {casino}            withdraw a request still waiting
+ *   GET  /api/me/earnings               wager points this month (pays anything owed first)
  * Admin (Kick usernames in ADMIN_KICK_USERNAMES)
  *   GET  /api/admin/overview
  *   GET  /api/admin/store               POST /api/admin/store         {item}  create or update
@@ -35,8 +36,11 @@
  *                                       POST /api/admin/links/check   {id}   look it up under the code again
  *   GET  /api/admin/messages            POST /api/admin/messages      {id, action: done|reopen|delete}
  *   POST /api/admin/images              {data: data-URL}  upload a picture → {url}
+ *   GET  /api/admin/earnings            POST /api/admin/earnings/run  pay wager points to everyone owed
  *   GET  /api/admin/users
  *   GET  /api/admin/points?name=        POST /api/admin/points        {name, delta, reason}
+ * Cron (Vercel, daily; Authorization: Bearer CRON_SECRET)
+ *   GET  /api/cron/wager-points         pay wager points to everyone owed
  * Auth: see kick.js.
  *
  * Wager raffles: a viewer links their casino username (an admin approves it),
@@ -52,6 +56,7 @@ const store = require("./store");
 const botrix = require("./botrix");
 const kick = require("./kick");
 const wager = require("./wager");
+const earnings = require("./earnings");
 
 const TIERS = ["gold", "red", "purple", "blue"];
 const CASINO_IDS = Object.keys(wager.CASINOS);
@@ -1142,6 +1147,31 @@ async function serveImage(req, res, id) {
   return res.end(img.buf);
 }
 
+/* ---------------------------------------------------------------- wager points */
+
+async function myEarnings(req, res) {
+  const user = requireUser(req);
+  return json(res, 200, await earnings.forUser(user.id));
+}
+
+async function adminEarnings(req, res) {
+  requireAdmin(req);
+  return json(res, 200, Object.assign(await earnings.overview(), { cron: !!process.env.CRON_SECRET }));
+}
+
+async function adminEarningsRun(req, res) {
+  const admin = requireAdmin(req);
+  throttle("earn-run", 10000);
+  return json(res, 200, { summary: await earnings.creditAll(admin.username) });
+}
+
+async function cronWagerPoints(req, res) {
+  const secret = process.env.CRON_SECRET;
+  if (!secret) fail(503, "CRON_SECRET isn't set.");
+  if (req.headers.authorization !== "Bearer " + secret) fail(401, "Not allowed.");
+  return json(res, 200, { summary: await earnings.creditAll("daily") });
+}
+
 async function adminUsers(req, res) {
   requireAdmin(req);
   const [users, orders, links] = await Promise.all([store.read("users"), store.read("redemptions"), store.read("links")]);
@@ -1217,6 +1247,10 @@ const ROUTES = {
   "POST /api/admin/links/manual": adminLinkManual,
   "POST /api/admin/links/check": adminLinkCheck,
   "POST /api/admin/images": adminImageUpload,
+  "GET /api/me/earnings": myEarnings,
+  "GET /api/admin/earnings": adminEarnings,
+  "POST /api/admin/earnings/run": adminEarningsRun,
+  "GET /api/cron/wager-points": cronWagerPoints,
   "GET /api/admin/users": adminUsers,
   "GET /api/admin/points": adminPointsLookup,
   "POST /api/admin/points": adminPointsAdjust,

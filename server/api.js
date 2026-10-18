@@ -7,6 +7,8 @@
  *   GET  /api/raffles                   active and past raffles
  *   GET  /api/overlay/raffle?id=        a raffle for the stream overlay
  *   GET  /api/overlay/alerts            latest store redemptions, for the alert overlay
+ *   GET  /api/wager-raffles             automatic wager raffles (masked entries, odds, your tickets)
+ *   GET  /api/overlay/wager-raffle?id=  one for the stream overlay
  *   POST /api/contact        {name, reply, topic, message, website, startedAt}   the contact form
  *   GET  /api/image/<id>                a picture uploaded in the admin panel
  * Signed in
@@ -35,6 +37,9 @@
  *                                       POST /api/admin/links/check   {id}   look it up under the code again
  *   GET  /api/admin/messages            POST /api/admin/messages      {id, action: done|reopen|delete}
  *   POST /api/admin/images              {data: data-URL}  upload a picture → {url}
+ *   GET  /api/admin/wager-raffles       POST /api/admin/wager-raffles {raffle} create or edit (while open)
+ *                                       POST /api/admin/wager-raffles/lock|unlock|draw|finish|delete {id}
+ *                                       POST /api/admin/wager-raffles/reroll {id, n}
  *   GET  /api/admin/users
  *   GET  /api/admin/points?name=        POST /api/admin/points        {name, delta, reason}
  * Auth: see kick.js.
@@ -52,6 +57,7 @@ const store = require("./store");
 const botrix = require("./botrix");
 const kick = require("./kick");
 const wager = require("./wager");
+const wagerRaffles = require("./wagerraffles");
 
 const TIERS = ["gold", "red", "purple", "blue"];
 const CASINO_IDS = Object.keys(wager.CASINOS);
@@ -1142,6 +1148,68 @@ async function serveImage(req, res, id) {
   return res.end(img.buf);
 }
 
+/* ---------------------------------------------------------------- wager raffles (automatic entry) */
+
+async function myCasinoName(req, casino) {
+  const user = readSession(req);
+  if (!user) return null;
+  const link = (await store.read("links")).find((l) => l.userId === user.id && l.casino === casino && l.status === "approved");
+  return link ? link.username : null;
+}
+
+async function listWagerRaffles(req, res) {
+  const all = await wagerRaffles.list();
+  const now = Date.now();
+  const order = { counting: 0, ended: 1, locked: 2, upcoming: 3, complete: 4 };
+  const shown = all
+    .map((r) => ({ r, state: wagerRaffles.stateOf(r, now) }))
+    .sort((a, b) => order[a.state] - order[b.state] || (b.r.completedAt || 0) - (a.r.completedAt || 0) || a.r.end - b.r.end)
+    .slice(0, 8);
+  const out = [];
+  for (const x of shown) out.push(await wagerRaffles.publicView(x.r, await myCasinoName(req, x.r.casino)));
+  return json(res, 200, { raffles: out, signedIn: !!readSession(req) });
+}
+
+async function overlayWagerRaffle(req, res, url) {
+  const all = await wagerRaffles.list();
+  const now = Date.now();
+  const id = url.searchParams.get("id");
+  const r = id ? all.find((x) => x.id === id)
+    : all.filter((x) => wagerRaffles.stateOf(x, now) !== "complete").sort((a, b) => a.end - b.end)[0] || all.sort((a, b) => (b.completedAt || 0) - (a.completedAt || 0))[0];
+  if (!r) return json(res, 200, { raffle: null });
+  const v = await wagerRaffles.publicView(r, null);
+  v.top = v.entries.slice().sort((a, b) => b.tickets - a.tickets).slice(0, 5);
+  delete v.entries;
+  return json(res, 200, { raffle: v });
+}
+
+async function adminWagerRaffles(req, res) {
+  requireAdmin(req);
+  const out = [];
+  for (const r of await wagerRaffles.list()) out.push(await wagerRaffles.adminView(r));
+  return json(res, 200, { raffles: out });
+}
+
+async function adminWagerRaffleSave(req, res) {
+  const admin = requireAdmin(req);
+  const { raffle } = await readJson(req);
+  const r = raffle && raffle.id ? await wagerRaffles.edit(raffle.id, raffle, admin.username) : await wagerRaffles.create(raffle || {}, admin.username);
+  return json(res, 200, { raffle: await wagerRaffles.adminView(r) });
+}
+
+function wagerRaffleAction(action) {
+  return async (req, res) => {
+    const admin = requireAdmin(req);
+    const body = await readJson(req);
+    throttle("wraffle:" + action + ":" + body.id, 1500);
+    if (action === "delete") { await wagerRaffles.remove(body.id, admin.username); return json(res, 200, { ok: true }); }
+    const r = action === "reroll" ? await wagerRaffles.draw(body.id, admin.username, body.n)
+      : action === "draw" ? await wagerRaffles.draw(body.id, admin.username)
+      : await wagerRaffles[action](body.id, admin.username);
+    return json(res, 200, { raffle: await wagerRaffles.adminView(r) });
+  };
+}
+
 async function adminUsers(req, res) {
   requireAdmin(req);
   const [users, orders, links] = await Promise.all([store.read("users"), store.read("redemptions"), store.read("links")]);
@@ -1217,6 +1285,16 @@ const ROUTES = {
   "POST /api/admin/links/manual": adminLinkManual,
   "POST /api/admin/links/check": adminLinkCheck,
   "POST /api/admin/images": adminImageUpload,
+  "GET /api/wager-raffles": listWagerRaffles,
+  "GET /api/overlay/wager-raffle": overlayWagerRaffle,
+  "GET /api/admin/wager-raffles": adminWagerRaffles,
+  "POST /api/admin/wager-raffles": adminWagerRaffleSave,
+  "POST /api/admin/wager-raffles/lock": wagerRaffleAction("lock"),
+  "POST /api/admin/wager-raffles/unlock": wagerRaffleAction("unlock"),
+  "POST /api/admin/wager-raffles/draw": wagerRaffleAction("draw"),
+  "POST /api/admin/wager-raffles/reroll": wagerRaffleAction("reroll"),
+  "POST /api/admin/wager-raffles/finish": wagerRaffleAction("finish"),
+  "POST /api/admin/wager-raffles/delete": wagerRaffleAction("delete"),
   "GET /api/admin/users": adminUsers,
   "GET /api/admin/points": adminPointsLookup,
   "POST /api/admin/points": adminPointsAdjust,

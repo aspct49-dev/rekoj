@@ -155,8 +155,51 @@
     setInterval(load, 5000);
   }
 
-  if (kind === "leaderboard") leaderboard();
+  /* ---------------- wager raffle (automatic entry) ---------------- */
+
+  function wagerRaffle() {
+    var id = params.get("id");
+    var seen = null; // draw count already shown, for the pop-in of new winners
+    var money = function (n) { return "$" + R.money(n, n % 1 ? 2 : 0); };
+
+    function render(r) {
+      if (!r) { root.innerHTML = ""; return; }
+      var drawing = r.status !== "open";
+      var kept = r.draws.filter(function (d) { return !d.rerolledAt; });
+      var fresh = seen === null ? 0 : r.draws.length - seen;
+      seen = r.draws.length;
+      var body = drawing
+        ? '<p class="ov-raffle__label">' + (r.status === "complete" ? "Winners" : "Winners so far · " + kept.length + " of " + r.drawsTotal) + "</p>" +
+          (r.draws.length ? '<ol class="ov-wr__winners">' + r.draws.map(function (d, i) {
+            var isNew = fresh > 0 && i >= r.draws.length - fresh;
+            return '<li class="' + (d.rerolledAt ? "is-rerolled " : "") + (isNew ? "is-new" : "") + '"><b>' + esc(d.name) + "</b><span>" + (d.rerolledAt ? "rerolled" : money(d.prize)) + "</span></li>";
+          }).join("") + "</ol>" : '<p class="ov-raffle__entries">Draws start soon · ' + R.money(r.totalTickets, 0) + " tickets in play</p>")
+        : '<p class="ov-raffle__label">' + (r.state === "counting" ? "Tickets count for" : r.state === "upcoming" ? "Starts in" : "Drawing soon") + "</p>" +
+          (r.state === "counting" || r.state === "upcoming" ? '<p class="ov-raffle__timer" data-ov-timer data-ends="' + new Date(r.state === "upcoming" ? r.start : r.end).toISOString() + '">' + countdown(r.state === "upcoming" ? r.start : r.end) + "</p>" : "") +
+          '<p class="ov-raffle__entries"><b>' + R.money(r.totalTickets, 0) + "</b> tickets · <b>" + money(r.unit) + "</b> wagered on " + esc(r.casinoName) + " = 1 ticket</p>";
+      root.innerHTML =
+        '<section class="ov-panel ov-wr">' +
+          '<div class="ov-raffle__main">' + brand() +
+            '<h1 class="ov-raffle__title">' + esc(r.title) + "<span>" + money(r.prizePool) + " · " + r.drawsTotal + " × " + money(r.prizePerDraw) + "</span></h1>" +
+            '<p class="ov-raffle__rule">Wager under <b>' + esc(R.config.code) + "</b> on " + esc(r.casinoName) + " · entered automatically</p>" + body +
+          "</div>" +
+        "</section>";
+    }
+
+    function load() {
+      R.api("/api/overlay/wager-raffle" + (id ? "?id=" + encodeURIComponent(id) : "")).then(function (d) { render(d.raffle); }).catch(function () {});
+    }
+    load();
+    setInterval(load, 5000);
+    setInterval(function () {
+      var t = root.querySelector("[data-ov-timer]");
+      if (t) t.textContent = countdown(t.getAttribute("data-ends"));
+    }, 1000);
+  }
+
+  if (kind === "wager-raffle") wagerRaffle();
+  else if (kind === "leaderboard") leaderboard();
   else if (kind === "raffle") raffle();
   else if (kind === "alerts") alerts();
-  else root.innerHTML = '<p class="ov-panel ov-unknown">Unknown overlay. Use /overlay/leaderboard, /overlay/raffle or /overlay/alerts.</p>';
+  else root.innerHTML = '<p class="ov-panel ov-unknown">Unknown overlay. Use /overlay/leaderboard, /overlay/raffle, /overlay/wager-raffle or /overlay/alerts.</p>';
 })();

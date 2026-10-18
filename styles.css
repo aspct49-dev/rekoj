@@ -1972,6 +1972,13 @@ html.is-overlay, html.is-overlay body { background: transparent; }
 .admin-table--tight th, .admin-table--tight td { padding: 9px 12px; }
 
 .ov-raffle__rule { margin: -4px 0 10px; color: #aab3c6; font-size: 13px; }
+.ov-wr { width: 460px; padding: 16px 18px; }
+.ov-wr__winners { margin: 4px 0 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+.ov-wr__winners li { display: flex; justify-content: space-between; gap: 10px; padding: 6px 10px; border-radius: 8px; background: rgba(13, 16, 22, .55); color: #f2f2f2; font-size: 15px; }
+.ov-wr__winners li span { color: var(--accent); font-weight: 800; }
+.ov-wr__winners li.is-rerolled { opacity: .5; }
+.ov-wr__winners li.is-rerolled b { text-decoration: line-through; }
+.ov-wr__winners li.is-new { animation: ov-pop .6s cubic-bezier(.2, 1.4, .4, 1) both; }
 .ov-raffle__rule b { color: #efefef; }
 
 @media (max-width: 720px) {
@@ -2210,6 +2217,93 @@ html.is-overlay, html.is-overlay body { background: transparent; }
   .listing--store.is-soon .store-grid { max-height: 360px; margin-top: -60px; }
 }
 
+.wr-admin { margin-bottom: 16px; }
+.wr-admin__head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+.wr-admin__head .admin-actions { align-self: flex-start; }
+.wr-admin__draws { margin: 0 0 12px; padding-left: 22px; display: grid; gap: 6px; color: #efefef; font-size: 14px; }
+.wr-admin__draws li.is-rerolled b { text-decoration: line-through; opacity: .6; }
+.wr-admin__seed code { display: inline-block; margin-top: 4px; padding: 2px 6px; border-radius: 4px; background: #0d1016; color: #aab3c6; font-size: 11.5px; word-break: break-all; }
+.wr-admin__more { margin-top: 14px; }
+
+/* ------------------------------------------------------------------
+   Wager Raffle (automatic entry) on the Raffles page
+   ------------------------------------------------------------------ */
+.wr-section[hidden] { display: none; }
+.wr { margin-top: 18px; }
+.wr-head {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 22px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #1b2432 0%, #151c27 100%);
+  box-shadow: inset 0 1px 0 0 var(--panel-edge);
+}
+.wr-head__thumb { width: 72px; height: 92px; flex: none; border-radius: 8px; object-fit: cover; }
+.wr-head__badge { display: grid; place-items: center; width: 72px; height: 72px; flex: none; border-radius: 12px; background: var(--panel); box-shadow: inset 0 1px 0 0 var(--panel-edge); color: var(--accent); font-weight: 800; font-size: 12px; letter-spacing: .08em; }
+.wr-head__main { min-width: 0; }
+.wr-head__title { margin: 0; color: #d9d9d9; font-family: var(--display); font-weight: 800; font-size: clamp(22px, 2.6vw, 28px); line-height: 1.2; }
+.wr-head__title .pill { margin-left: 6px; vertical-align: 4px; font-family: var(--body); }
+.wr-head__prize { margin: 8px 0 2px; color: #aab3c6; font-size: 15px; }
+.wr-head__prize b { color: var(--accent); font-size: 17px; }
+.wr-head__when { margin: 0; color: var(--muted); font-size: 14px; }
+.wr-timer { color: #efefef; font-variant-numeric: tabular-nums; }
+.wr-how { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 10px; }
+.wr-how__item { display: grid; gap: 4px; padding: 14px 16px; border-radius: 10px; background: #151c27; box-shadow: inset 0 1px 0 0 #222c3b; }
+.wr-how__item b { color: #efefef; font-size: 15px; }
+.wr-how__item span { color: var(--muted); font-size: 13.5px; line-height: 1.5; }
+.wr-grid { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 12px; margin-top: 12px; align-items: start; }
+.wr-side { display: grid; gap: 12px; }
+.wr-card { padding: 18px; border-radius: 12px; background: #151c27; box-shadow: inset 0 1px 0 0 #222c3b; min-width: 0; }
+.wr-card__title { margin: 0 0 12px; color: #efefef; font-weight: 700; font-size: 16px; }
+.wr-muted { color: var(--muted); font-size: 13px; font-weight: 500; line-height: 1.55; }
+.wr-card__title .wr-muted { margin-left: 6px; }
+.wr-you__text { margin: 0 0 12px; color: #aab3c6; font-size: 14.5px; line-height: 1.55; }
+.wr-you__text b { color: #efefef; }
+.wr-you__hint { margin: 0; color: var(--muted); font-size: 13px; }
+.wr-you__hint a, .wr-card a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.wr-you__btn { width: auto; padding: 0 18px; font-size: 14px; }
+.wr-you__stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.wr-you__stats span { display: grid; gap: 2px; padding: 10px; border-radius: 8px; background: #1a202b; text-align: center; }
+.wr-you__stats b { color: #f2f2f2; font-family: var(--display); font-size: 20px; line-height: 1.1; }
+.wr-you__stats small { color: var(--muted); font-size: 12px; }
+.wr-you__won { margin: 12px 0 0; color: #5fe09a; font-weight: 700; }
+.wr-winners ol { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; }
+.wr-winners li { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; background: #1a202b; color: #efefef; font-size: 14px; }
+.wr-winners__n { display: grid; place-items: center; width: 22px; height: 22px; flex: none; border-radius: 6px; background: var(--panel); color: #aab3c6; font-weight: 700; font-size: 12px; }
+.wr-winners__prize { margin-left: auto; color: var(--accent); font-weight: 700; }
+.wr-winners li.is-rerolled { opacity: .55; }
+.wr-winners li.is-rerolled b { text-decoration: line-through; }
+.wr-winners li.is-rerolled .wr-winners__prize { color: var(--muted); font-weight: 500; }
+.wr-hash { display: grid; gap: 4px; margin: 10px 0 0; }
+.wr-hash span { color: var(--muted); font-size: 12px; font-weight: 600; }
+.wr-hash code { padding: 8px 10px; border-radius: 6px; background: #0d1016; color: #aab3c6; font-size: 11.5px; word-break: break-all; }
+.wr-verify { width: auto; margin-top: 12px; padding: 0 16px; font-size: 14px; }
+.wr-verify__out { margin: 10px 0 0; color: #aab3c6; font-size: 13.5px; }
+.wr-verify__out.is-ok { color: #5fe09a; }
+.wr-verify__out.is-bad { color: #ff8a8a; }
+.wr-table { display: grid; gap: 4px; }
+.wr-table__row { display: grid; grid-template-columns: 36px minmax(0, 1fr) 110px 70px 64px; gap: 10px; align-items: center; padding: 8px 10px; border-radius: 8px; background: #1a202b; color: #dadada; font-size: 14px; }
+.wr-table__row span:nth-child(n+3) { text-align: right; font-variant-numeric: tabular-nums; }
+.wr-table__row b { color: #efefef; }
+.wr-table__head { background: transparent; color: var(--muted); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+.wr-table__row.is-you { box-shadow: inset 3px 0 0 0 var(--accent); background: #1d2636; }
+.wr-more { width: auto; margin-top: 10px; padding: 0 16px; font-size: 13.5px; }
+.wr-empty { margin: 0; padding: 18px; border-radius: 8px; background: #1a202b; color: var(--muted); }
+.wr-others { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.wr-others__btn { padding: 6px 12px; border-radius: 16px; background: var(--panel); color: #dadada; font-weight: 600; font-size: 13px; }
+
+@media (max-width: 960px) {
+  .wr-grid { grid-template-columns: 1fr; }
+  .wr-how { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .wr-head { align-items: flex-start; }
+  .wr-head__thumb, .wr-head__badge { width: 56px; height: 56px; }
+  .wr-table__row { grid-template-columns: 26px minmax(0, 1fr) 70px 54px; }
+  .wr-table__row span:nth-child(3) { display: none; }
+}
+
 /* ------------------------------------------------------------------
    Buttons: every button darkens slightly on hover and presses down 1px
    when clicked (as on kingkulbik). One rule so they all behave the same.
@@ -2219,7 +2313,7 @@ html.is-overlay, html.is-overlay body { background: transparent; }
    have no fill to darken and keep their own highlight.
    ------------------------------------------------------------------ */
 :is(.btn, .bonus__code, .bonus__visit, .bonus__cta, .teaser__cta, .given__cta, .home-hero__scroll, .sort,
-    .item__buy, .raffle__join, .past-raffle__view, .past__nav, .account__chip, .dialog__btn, .abtn, .admin-tile) {
+    .item__buy, .raffle__join, .past-raffle__view, .past__nav, .account__chip, .dialog__btn, .abtn, .admin-tile, .wr-others__btn) {
   transition: filter .25s ease, translate .15s ease, opacity .15s ease, background-color .25s ease, color .15s ease;
 }
 @media (hover: hover) and (pointer: fine) {

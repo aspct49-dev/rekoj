@@ -795,6 +795,134 @@
     }).catch(fail);
   }
 
+  /* ---------------- wager raffles (automatic entry) ---------------- */
+
+  var WR_STATE = { counting: ["Counting tickets", "pending"], upcoming: ["Starts soon", "muted"], ended: ["Ready to lock", "refunded"], locked: ["Drawing", "pending"], complete: ["Finished", "done"] };
+  var WR_LOG = { created: "Created", edited: "Edited", locked: "Locked", unlocked: "Unlocked", drew: "Drew", rerolled: "Rerolled", finished: "Finished" };
+  var wrOpen = {};
+
+  function wrDay(ms) { return new Date(ms).toLocaleString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) + " UTC"; }
+
+  views.wraffles = function () {
+    R.api("/api/admin/wager-raffles").then(function (d) {
+      var list = d.raffles;
+      panel.innerHTML =
+        '<div class="admin-toolbar"><button class="abtn abtn--primary" type="button" data-wr-new>+ New wager raffle</button>' +
+          '<p class="admin-muted">Everyone who wagers under code ' + esc(R.config.code) + " on the casino during the period is entered automatically: no linking or joining. " +
+          "When counting ends: <b>Lock</b> (freezes tickets and publishes the seed hash), <b>Draw</b> each prize, then <b>Finish</b> (reveals the seed so anyone can verify).</p></div>" +
+        (list.length ? list.map(wrCard).join("") : '<p class="admin-empty">No wager raffles yet. Create one: it starts counting straight away.</p>');
+
+      panel.querySelector("[data-wr-new]").addEventListener("click", function () { wrEdit(null); });
+      var find = function (id) { return list.filter(function (r) { return r.id === id; })[0]; };
+      panel.querySelectorAll("[data-wr]").forEach(function (b) {
+        b.addEventListener("click", function () { wrAction(b.getAttribute("data-wr"), find(b.getAttribute("data-id")), b.getAttribute("data-n")); });
+      });
+      panel.querySelectorAll("[data-wr-toggle]").forEach(function (b) {
+        b.addEventListener("click", function () { var id = b.getAttribute("data-wr-toggle"); wrOpen[id] = !wrOpen[id]; views.wraffles(); });
+      });
+    }).catch(fail);
+  };
+
+  function wrCard(r) {
+    var st = WR_STATE[r.state] || ["", "muted"];
+    var kept = r.draws.filter(function (x) { return !x.rerolledAt; }).length;
+    var left = r.status === "locked" && kept < r.drawsTotal;
+    var acts = [];
+    if (r.status === "open") {
+      acts.push('<button class="abtn abtn--ok" type="button" data-wr="lock" data-id="' + r.id + '">Lock tickets</button>');
+      acts.push('<button class="abtn" type="button" data-wr="edit" data-id="' + r.id + '">Edit</button>');
+    }
+    if (r.status === "locked") {
+      if (left && r.canDraw) acts.push('<button class="abtn abtn--ok" type="button" data-wr="draw" data-id="' + r.id + '">Draw prize ' + (kept + 1) + " of " + r.drawsTotal + "</button>");
+      else acts.push('<button class="abtn abtn--primary" type="button" data-wr="finish" data-id="' + r.id + '">Finish &amp; reveal seed</button>');
+      if (!r.draws.length) acts.push('<button class="abtn" type="button" data-wr="unlock" data-id="' + r.id + '">Unlock</button>');
+    }
+    acts.push('<button class="abtn" type="button" data-wr="overlay" data-id="' + r.id + '">Copy overlay link</button>');
+    acts.push('<button class="abtn abtn--danger" type="button" data-wr="delete" data-id="' + r.id + '">Delete</button>');
+    var open = !!wrOpen[r.id];
+    var entries = r.entries.slice().sort(function (a, b) { return b.tickets - a.tickets; });
+    return '<section class="admin-card wr-admin">' +
+      '<div class="wr-admin__head"><div><h2 class="admin-card__title">' + esc(r.title) + ' <span class="pill pill--' + st[1] + '">' + st[0] + "</span></h2>" +
+        '<p class="admin-muted">' + esc(r.casinoName) + " · " + dollars(r.unit) + " per ticket · " + dollars(r.prizePool) + " pool = " + r.drawsTotal + " × " + dollars(r.prizePerDraw) +
+          " · max " + r.maxWins + " win" + (r.maxWins === 1 ? "" : "s") + " each<br />Counts " + wrDay(r.start) + " → " + wrDay(r.end) + "</p></div>" +
+        '<div class="admin-actions">' + acts.join("") + "</div></div>" +
+      '<div class="admin-tiles">' +
+        wrTile(money(r.entries.length), r.status === "open" ? "Players (live)" : "Players (frozen)") + wrTile(money(r.totalTickets), "Tickets") +
+        wrTile(kept + " / " + r.drawsTotal, "Prizes drawn") + wrTile(dollars(r.entries.reduce(function (s, e) { return s + e.amount; }, 0)), "Wagered") +
+      "</div>" +
+      (r.error ? '<p class="admin-warn">Couldn\'t load live tickets: ' + esc(r.error) + "</p>" : "") +
+      (left && !r.canDraw ? '<p class="admin-notice">Everyone left has reached the win cap (' + r.maxWins + "), so " + (r.drawsTotal - kept) + " prize" + (r.drawsTotal - kept === 1 ? "" : "s") +
+        " can't be drawn. Finish the raffle, or keep the rest for another one.</p>" : "") +
+      (r.draws.length ? '<h3 class="admin-subtitle">Draws</h3><ol class="wr-admin__draws">' + r.draws.map(function (x) {
+        return '<li class="' + (x.rerolledAt ? "is-rerolled" : "") + '"><b>' + esc(x.name) + "</b> " + dollars(x.prize) +
+          ' <small class="admin-muted">ticket ' + money(x.ticket + 1) + " of " + money(x.pool) + " · " + when(x.at) + (x.rerolledAt ? " · rerolled" : "") + "</small>" +
+          (!x.rerolledAt && r.status === "locked" ? ' <button class="abtn abtn--sm" type="button" data-wr="reroll" data-id="' + r.id + '" data-n="' + x.n + '">Reroll</button>' : "") + "</li>";
+      }).join("") + "</ol>" : "") +
+      (r.seedHash ? '<p class="admin-muted wr-admin__seed">Seed hash <code>' + esc(r.seedHash) + "</code>" + (r.seed ? "<br />Seed <code>" + esc(r.seed) + "</code>" : "") + "</p>" : "") +
+      '<button class="abtn abtn--sm" type="button" data-wr-toggle="' + r.id + '">' + (open ? "Hide entries &amp; history" : "Show entries &amp; history") + "</button>" +
+      (open ? '<div class="raffle-detail wr-admin__more"><div class="admin-table-wrap admin-table-wrap--flat"><table class="admin-table admin-table--tight"><thead><tr><th>#</th><th>' + esc(r.casinoName) + "</th><th>Wagered</th><th>Tickets</th><th>Odds</th></tr></thead><tbody>" +
+          (entries.length ? entries.map(function (e, i) {
+            return "<tr><td>" + (i + 1) + "</td><td>" + esc(e.name) + "</td><td>" + dollars(e.amount) + "</td><td><b>" + money(e.tickets) + "</b></td><td>" + (e.odds * 100).toFixed(2) + "%</td></tr>";
+          }).join("") : '<tr><td colspan="5" class="admin-muted">No tickets yet.</td></tr>') + "</tbody></table></div>" +
+          '<div><h3 class="admin-subtitle">History</h3><ul class="mini-list mini-list--log">' + (r.history || []).map(function (h) {
+            return "<li><b>" + esc(WR_LOG[h.type] || h.type) + '</b> <span class="admin-muted">by ' + esc(h.by || "") + "</span><small>" + (h.detail ? esc(h.detail) + " · " : "") + when(h.at) + "</small></li>";
+          }).join("") + "</ul></div></div>" : "") +
+    "</section>";
+  }
+
+  function wrTile(n, label) {
+    return '<div class="admin-tile admin-tile--static"><span class="admin-tile__n">' + n + '</span><span class="admin-tile__label">' + label + "</span></div>";
+  }
+
+  function wrAction(action, r, n) {
+    var done = function (msg) { return function (res) { R.toast(msg(res)); views.wraffles(); }; };
+    if (action === "edit") return wrEdit(r);
+    if (action === "overlay") {
+      var url = location.origin + "/overlay/wager-raffle?id=" + encodeURIComponent(r.id);
+      return R.copyText(url).then(function () { R.toast("Overlay link copied."); }, function () { R.toast(esc(url)); });
+    }
+    var ask = {
+      lock: ["Lock " + r.title + "?", "<p>Fetches the latest " + esc(r.casinoName) + " wagers, freezes everyone's tickets (" + money(r.totalTickets) + " right now) and publishes the seed hash. Tickets stop counting. Do this once the counting period has ended.</p>", "Lock tickets"],
+      unlock: ["Unlock " + r.title + "?", "<p>Back to counting live. The current seed is thrown away and a new one is made at the next lock.</p>", "Unlock"],
+      draw: ["Draw a prize?", "<p>Picks one ticket from the frozen list using the committed seed. Shows on the overlay straight away.</p>", "Draw"],
+      reroll: ["Reroll this draw?", "<p>Use this when the winner can't take the prize. The draw stays on the record marked rerolled, that player leaves the pool, and the next draw from the seed picks the replacement.</p>", "Reroll"],
+      finish: ["Finish " + r.title + "?", "<p>Marks the raffle finished and reveals the seed, so anyone can verify every draw on the Raffles page.</p>", "Finish & reveal"],
+      delete: ["Delete " + r.title + "?", "<p>It disappears from the site, draws and all. This can't be undone.</p>", "Delete"],
+    }[action];
+    R.confirm({ title: ask[0], html: ask[1], confirm: ask[2], danger: action === "delete" || action === "reroll" }).then(function (ok) {
+      if (!ok) return;
+      var body = { id: r.id };
+      if (action === "reroll") body.n = Number(n);
+      return R.api("/api/admin/wager-raffles/" + action, body).then(done(function (res) {
+        if (action === "draw" || action === "reroll") { var last = res.raffle.draws[res.raffle.draws.length - 1]; return "Winner: " + esc(last.name) + " (" + dollars(last.prize) + ")"; }
+        return { lock: "Locked. Tickets frozen.", unlock: "Unlocked.", finish: "Finished. Seed revealed.", delete: "Deleted." }[action];
+      }));
+    }).catch(fail);
+  }
+
+  function wrEdit(r) {
+    var now = new Date();
+    var x = r || {
+      title: "Monthly Wager Raffle", casino: "razed", unit: 1000, prizePool: 1000, prizePerDraw: 200, maxWins: 2, thumb: "",
+      start: Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1), end: Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1),
+    };
+    formDialog(r ? "Edit wager raffle" : "New wager raffle", [
+      { name: "title", label: "Title", type: "text", value: x.title, required: true, placeholder: "e.g. October Wager Raffle" },
+      { name: "casino", label: "Casino", type: "select", value: x.casino, options: CASINOS, hint: "Everyone wagering under " + R.config.code + " here is entered. Razed counts whole UTC days, at most 45." },
+      { name: "start", label: "Tickets count from (your local time)", type: "datetime", value: new Date(x.start).toISOString() },
+      { name: "end", label: "Tickets count until (your local time)", type: "datetime", value: new Date(x.end).toISOString() },
+      { name: "unit", label: "Dollars wagered per ticket", type: "number", step: "0.01", min: 1, value: x.unit, required: true, hint: "e.g. 1000: $12,500 wagered = 12 tickets." },
+      { name: "prizePool", label: "Prize pool ($)", type: "number", step: "0.01", min: 1, value: x.prizePool, required: true },
+      { name: "prizePerDraw", label: "Prize per draw ($)", type: "number", step: "0.01", min: 1, value: x.prizePerDraw, required: true, hint: "Pool ÷ prize = number of draws (1,000 ÷ 200 = 5)." },
+      { name: "maxWins", label: "Max wins per person", type: "number", min: 1, value: x.maxWins, required: true },
+      { name: "thumb", label: "Picture (optional)", type: "imagepick", value: x.thumb || "", options: [["", "No picture"]].concat(RAFFLE_THUMBS) },
+    ], r ? "Save" : "Create").then(function (v) {
+      if (!v) return;
+      v.id = r ? r.id : undefined;
+      return R.api("/api/admin/wager-raffles", { raffle: v }).then(function () { R.toast(r ? "Saved." : "Created. Tickets are counting."); views.wraffles(); });
+    }).catch(fail);
+  }
+
   /* ---------------- linked accounts ---------------- */
 
   var linkFilter = "pending";
@@ -1065,6 +1193,7 @@
     { path: "/overlay/leaderboard?board=razed", name: "Leaderboard · Razed", size: "460 × 640", note: "Live top 10, prize pool and countdown. Use board=razedio for Razed.IO, and &top=5 for a shorter list." },
     { path: "/overlay/leaderboard?board=razedio", name: "Leaderboard · Razed.IO", size: "460 × 420", note: "Same, for the Razed.IO board." },
     { path: "/overlay/raffle", name: "Raffle", size: "520 × 260", note: "The next raffle to end with its ticket rule and entry count; shows the winners for 10 minutes after you draw." },
+    { path: "/overlay/wager-raffle", name: "Wager raffle", size: "480 × 420", note: "The current wager raffle: prize pool and countdown while tickets count, then each winner as it's drawn. Add ?id=… (from the Wager raffles tab) to pin one." },
     { path: "/overlay/alerts", name: "Store alerts", size: "520 × 140", note: "Pops up when someone buys from the Points Store. Transparent until then." },
   ];
 

@@ -22,7 +22,7 @@
       ]
     },
     {
-      "source": "/(styles.css|app.js|data.js|site.js|content.js|home.js|store.js|raffles.js|profile.js|admin.js|overlay.js|contact.js)",
+      "source": "/(styles.css|app.js|data.js|site.js|content.js|home.js|store.js|raffles.js|wager-raffle.js|profile.js|admin.js|overlay.js|contact.js)",
       "headers": [
         {
           "key": "Cache-Control",

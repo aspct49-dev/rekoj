@@ -55,6 +55,24 @@
   /** "Title · Subtitle", or just the title. */
   function raffleLabel(r) { var s = raffleSub(r); return r.game + (s ? " · " + s : ""); }
 
+  /**
+   * Wager-points progress for a signed-in player (GET /api/me/earnings), as
+   * HTML: a bar toward the next payout per linked casino. "" when not linked.
+   */
+  function earnProgress(d) {
+    if (!d || !d.linked || !d.months || !d.months.length) return "";
+    return d.months.map(function (m) {
+      var into = m.wagered - (m.nextAt - m.per);
+      var pct = Math.max(0, Math.min(100, into / m.per * 100));
+      return '<div class="earn-progress">' +
+        '<div class="earn-progress__top"><span>' + esc(m.casinoName) + " · " + esc(m.username) + '</span><b>$' + money(m.wagered, 0) + " this month</b></div>" +
+        '<div class="earn-progress__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="' + Math.round(pct) + '" aria-label="Progress to your next ' + money(m.points, 0) + ' points"><span style="width:' + pct.toFixed(1) + '%"></span></div>' +
+        '<div class="earn-progress__foot"><span>$' + money(m.nextAt - m.wagered, 0) + " more for your next " + money(m.points, 0) + " points</span>" +
+          "<span>" + money(m.credited, 0) + " points earned this month</span></div>" +
+      "</div>";
+    }).join("");
+  }
+
   function shortCountdown(endsAt) {
     var s = Math.floor((new Date(endsAt).getTime() - Date.now()) / 1000);
     if (!(s > 0)) return null;
@@ -450,6 +468,7 @@
     toast: toast,
     copyText: copyText,
     podiumCard: podiumCard,
+    earnProgress: earnProgress,
     raffleSub: raffleSub,
     raffleLabel: raffleLabel,
     loadBoard: loadBoard,

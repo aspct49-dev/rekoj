@@ -129,6 +129,37 @@
         </div>
         <div class="store-grid" id="storeGrid"></div>
         <p class="listing__empty" id="storeEmpty" hidden>No items match your search.</p>
+        <section class="earn" id="earn" aria-labelledby="earnTitle">
+          <h2 class="earn__title" id="earnTitle">How to earn Rekoj points</h2>
+          <p class="earn__sub"><span data-earn-rate>100 points = $1</span>. Points land in your balance automatically.</p>
+          <div class="earn__cards">
+            <article class="earn-card earn-card--watch">
+              <div class="earn-card__head">
+                <span class="earn-card__icon earn-card__icon--kick" aria-hidden="true"><svg viewBox="0 0 24 24" focusable="false"><path fill="currentColor" d="M1.333 0h8v5.333H12V2.667h2.667V0h8v8H20v2.667h-2.667v2.666H20V16h2.667v8h-8v-2.667H12v-2.666H9.333V24h-8Z"/></svg></span>
+                <h3 class="earn-card__name">Watch &amp; Chat</h3>
+              </div>
+              <p class="earn-card__rate" data-earn-watch-rate>1 point every 5 min</p>
+              <ul class="earn-card__list">
+                <li data-earn-watch-sub>Subscribers earn 2 points</li>
+                <li data-earn-watch-hour>12 points ($0.12) for every hour you watch</li>
+                <li>Watch <a href="https://kick.com/rekoj" target="_blank" rel="noopener">RekoJ on Kick</a> with chat open</li>
+              </ul>
+            </article>
+            <article class="earn-card earn-card--wager" data-earn-wager>
+              <div class="earn-card__head">
+                <span class="earn-card__icon earn-card__icon--razed" aria-hidden="true"><img src="assets/shared/razed-logo.webp" alt="" width="40" height="12" /></span>
+                <h3 class="earn-card__name">Wager on Razed</h3>
+              </div>
+              <p class="earn-card__rate" data-earn-wager-rate>250 points per $10,000 wagered</p>
+              <ul class="earn-card__list">
+                <li data-earn-wager-value>That's $2.50 in points for every $10k</li>
+                <li>Under code <b>REKOJ</b>, counted each month (UTC)</li>
+                <li>Link your Razed username on your <a href="/profile#links">profile</a> to start</li>
+              </ul>
+              <div class="earn-card__me" data-earn-me hidden></div>
+            </article>
+          </div>
+        </section>
       </div>
     </main>
 

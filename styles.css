@@ -2156,6 +2156,50 @@ html.is-overlay, html.is-overlay body { background: transparent; }
 }
 
 /* ------------------------------------------------------------------
+   How to earn Rekoj points (store page, profile)
+   ------------------------------------------------------------------ */
+.earn { position: relative; z-index: 1; margin-top: 46px; }
+.earn__title { margin: 0; color: #d9d9d9; font-family: var(--display); font-weight: 800; font-size: clamp(24px, 3vw, 30px); line-height: 1.2; }
+.earn__sub { margin: 6px 0 0; color: var(--muted); font-size: 15px; }
+.earn__cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 18px; }
+.earn-card {
+  padding: 22px 22px 20px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #1b2432 0%, #151c27 100%);
+  box-shadow: inset 0 1px 0 0 var(--panel-edge);
+}
+.earn-card[hidden] { display: none; }
+.earn-card__head { display: flex; align-items: center; gap: 12px; }
+.earn-card__icon { display: grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 10px; background: var(--panel); box-shadow: inset 0 1px 0 0 var(--panel-edge); }
+.earn-card__icon--kick { color: #53fc18; }
+.earn-card__icon--kick svg { width: 18px; height: 18px; }
+.earn-card__icon--razed img { width: 30px; height: auto; }
+.earn-card__name { margin: 0; color: #efefef; font-weight: 700; font-size: 18px; }
+.earn-card__rate { margin: 16px 0 10px; color: var(--accent); font-family: var(--display); font-weight: 800; font-size: 22px; line-height: 1.25; }
+.earn-card__list { margin: 0; padding-left: 18px; color: #aab3c6; font-size: 14.5px; line-height: 1.75; }
+.earn-card__list li::marker { color: #364151; }
+.earn-card__list b { color: #efefef; }
+.earn-card__list a, .earn-card__hint a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+.earn-card__me { margin-top: 16px; padding-top: 16px; border-top: 1px solid #222c3b; }
+.earn-card__me[hidden] { display: none; }
+.earn-card__hint { margin: 0; color: #aab3c6; font-size: 14px; }
+.earn-progress + .earn-progress { margin-top: 14px; }
+.earn-progress__top, .earn-progress__foot { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; font-size: 13.5px; }
+.earn-progress__top { color: #aab3c6; }
+.earn-progress__top b { color: #efefef; }
+.earn-progress__foot { margin-top: 8px; color: var(--muted); font-size: 12.5px; }
+.earn-progress__bar { height: 8px; margin-top: 8px; border-radius: 4px; background: #0f141c; overflow: hidden; }
+.earn-progress__bar span { display: block; height: 100%; border-radius: 4px; background: var(--brand-grad); }
+.earn-progress-list { padding: 18px; border-radius: 10px; background: #151c27; box-shadow: inset 0 1px 0 0 #222c3b; }
+.earn-progress-list .profile-section__intro { margin: 14px 0 0; }
+.profile-section[hidden] { display: none; }
+.admin-earn { margin-bottom: 16px; }
+
+@media (max-width: 720px) {
+  .earn__cards { grid-template-columns: 1fr; }
+}
+
+/* ------------------------------------------------------------------
    Points Store: coming soon
    ------------------------------------------------------------------ */
 .listing--store.is-soon .store-grid {

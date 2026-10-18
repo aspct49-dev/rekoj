@@ -12,6 +12,7 @@
  *   DATABASE_URL                         Neon Postgres (accounts, links, orders, raffles)
  *   RAZED_REFERRAL_KEY, RAZEDIO_API_KEY  wagers for raffle tickets (shared with the leaderboard)
  *   CONTACT_DISCORD_WEBHOOK              optional: contact messages also go to Discord
+ *   CRON_SECRET                          lets Vercel Cron run the daily wager-points payout
  *   ADMIN_KICK_USERNAMES                 who can open /admin (default: rekoj,aspect900)
  */
 const serveApi = require("../server/api");

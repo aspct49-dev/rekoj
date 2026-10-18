@@ -64,6 +64,19 @@
     // Set to true to open the store (items are managed in admin → Store).
     storeOpen: false,
 
+    // How viewers earn Rekoj points (100 points = $1).
+    //   watch: set up in BotRix (the site only shows these numbers; keep them in sync).
+    //   wager: credited by the site for approved casino links, per calendar month (UTC),
+    //          counting from the day the link was approved. Remove a casino to stop it.
+    earn: {
+      pointsPerDollar: 100,
+      startsOn: "2026-10-17", // wager before this day (UTC) never earns points
+      watch: { everyMinutes: 5, points: 1, subPoints: 2 }, // no monthly cap (BotRix can't cap)
+      wager: {
+        razed: { per: 10000, points: 250 },
+      },
+    },
+
     storeImages: STORE_IMAGES,
     raffleThumbs: RAFFLE_THUMBS,
 

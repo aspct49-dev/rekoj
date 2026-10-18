@@ -116,6 +116,11 @@
         ? "Couldn't load your points from BotRix just now. Try again in a minute."
         : "BotRix hasn't seen you on RekoJ's channel yet. Watch a stream with chat open to start earning Rekoj points.") + "</p>") +
 
+      '<section class="profile-section" id="earnings" hidden>' +
+        '<div class="profile-section__head"><h2>Wager points</h2><a class="accent" href="/points-store#earn">How it works →</a></div>' +
+        '<div class="earn-progress-list" data-earnings></div>' +
+      "</section>" +
+
       '<section class="profile-section" id="links">' +
         '<div class="profile-section__head"><h2>Linked casino accounts</h2></div>' +
         '<p class="profile-section__intro">Raffles are wager raffles: link the username you play under with code <b class="accent">' + R.esc(R.config.code) +
@@ -172,9 +177,24 @@
     });
   }
 
+  function loadEarnings() {
+    return R.api("/api/me/earnings").then(function (d) {
+      var html = R.earnProgress(d);
+      var sec = document.getElementById("earnings");
+      if (!html || !sec) return;
+      var r = d.rules && d.rules.razed;
+      sec.querySelector("[data-earnings]").innerHTML = html +
+        (r ? '<p class="profile-section__intro">Every $' + R.money(r.per, 0) + " you wager on Razed under code " + R.esc(R.config.code) +
+          " pays " + R.money(r.points, 0) + " Rekoj points, added to your balance automatically.</p>" : "");
+      sec.hidden = false;
+      if (d.months.some(function (m) { return m.credited; })) R.refreshPoints && R.refreshPoints();
+    }).catch(function () {});
+  }
+
   function load(me, focus) {
     return R.api("/api/me/activity").then(function (activity) {
       render(me, activity);
+      loadEarnings();
     }).catch(function (err) {
       if (err.status === 401) return signedOut();
       render(me, { orders: [], raffles: [], links: {} });

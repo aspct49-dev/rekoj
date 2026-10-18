@@ -178,6 +178,18 @@ The server code is in `server/` (`api.js` routes, `kick.js` login, `botrix.js` p
 except the leaderboard. POST requests must come from the site itself, and the BotRix bid token never leaves the
 server.
 
+### Earning Rekoj points
+Rules are in `content.js` → `earn` (100 points = $1):
+- **Watch & Chat** (1 point every 5 minutes, 2 for subscribers, no monthly cap) is set up **in BotRix** (points per
+  5 minutes = 1, subscriber bonus = 1); the site only shows those numbers on the store page, so keep `earn.watch`
+  in step with BotRix.
+- **Wager on Razed**: every $10,000 wagered under code REKOJ in a calendar month (UTC) pays 250 points, added to
+  the player's BotRix balance by the site (`server/earnings.js`). Only approved links earn, counted from the day
+  the link was approved (and never before `earn.startsOn`). A ledger records what each player was paid per month,
+  so nothing is paid twice; if BotRix refuses, the payment is retried on the next run. Payouts happen when a player
+  opens their profile or the store, with **Credit now** in admin → Points, and daily at 06:00 UTC via Vercel Cron
+  (needs `CRON_SECRET`). Every payout is in the points log. Add `razedio: { per, points }` to pay for Razed.IO too.
+
 ### Contact form
 `/contact` posts to `/api/contact`. The browser and the server check the same rules (a reply address and a
 message of 10–2,000 characters). Spam protection: a hidden field bots fill in, a minimum time before sending,
@@ -230,6 +242,7 @@ The pages are plain static files, so nothing needs building.
 | `ADMIN_KICK_USERNAMES` | Optional, default `rekoj,aspect900` |
 | `AUTH_URL` | Optional, the public origin if the Kick redirect URL comes out wrong |
 | `CONTACT_DISCORD_WEBHOOK` | Optional, a Discord webhook URL; contact messages are also posted there |
+| `CRON_SECRET` | Long random string; lets Vercel Cron run the daily wager-points payout |
 
 The Kick app must list each redirect URL exactly: `https://rekoj.org/api/auth/kick/callback`
 (plus `https://rekoj.vercel.app/api/auth/kick/callback` if you ever log in there) and `http://localhost:5173/api/auth/kick/callback` for local testing.

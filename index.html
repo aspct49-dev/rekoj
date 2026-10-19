@@ -2,10 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <!-- Page-change animation opt-in. Inline on purpose: Chrome decides as the
-       new page is revealed, and if this sat in styles.css a slow stylesheet
-       would silently cancel the transition. -->
-  <style>@view-transition{navigation:auto}@media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}</style>
+  <!-- Start loading a page when its link is hovered/pressed (not login, admin or overlays) -->
+  <script type="speculationrules">{"prefetch":[{"where":{"and":[{"href_matches":"/*"},{"not":{"href_matches":["/api/*","/admin*","/overlay*"]}}]},"eagerness":"moderate"}]}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>RekoJ Rewards | Leaderboards, Raffles &amp; Points Store under code REKOJ</title>
   <meta name="description" content="The rewards site for players under code REKOJ: monthly leaderboards on Razed and Razed.IO, raffles, a points store and weekly and monthly bonuses." />

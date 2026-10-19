@@ -2,10 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <!-- Page-change animation opt-in. Inline on purpose: Chrome decides as the
-       new page is revealed, and if this sat in styles.css a slow stylesheet
-       would silently cancel the transition. -->
-  <style>@view-transition{navigation:auto}@media (prefers-reduced-motion:reduce){@view-transition{navigation:none}}</style>
+  <!-- Start loading a page when its link is hovered/pressed (not login, admin or overlays) -->
+  <script type="speculationrules">{"prefetch":[{"where":{"and":[{"href_matches":"/*"},{"not":{"href_matches":["/api/*","/admin*","/overlay*"]}}]},"eagerness":"moderate"}]}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Raffles | RekoJ</title>
   <meta name="description" content="Join active RekoJ raffles for bonus buys and prizes, and see who won the past ones." />
@@ -116,16 +114,6 @@
         <div class="raffle-grid" id="raffleGrid"></div>
         <p class="listing__empty" id="rafflesEmpty" hidden>No raffles match your search.</p>
 
-        <section id="wagerRaffleSection" class="wr-section" hidden>
-          <div class="listing__head listing__head--past" id="wager-raffle">
-            <img class="listing__icon listing__icon--raffles" src="assets/raffles/header-icon.svg" alt="" width="37" height="29" />
-            <div>
-              <h2 class="listing__title">Wager Raffle</h2>
-              <p class="listing__sub">Everyone who wagers under code REKOJ is entered automatically</p>
-            </div>
-          </div>
-          <div id="wagerRaffle"></div>
-        </section>
 
         <div class="listing__head listing__head--past">
           <img class="listing__icon listing__icon--raffles" src="assets/raffles/header-icon.svg" alt="" width="37" height="29" />
@@ -210,7 +198,7 @@
   <script src="data.js"></script>
   <script src="content.js"></script>
   <script src="site.js"></script>
-  <script src="raffles.js"></script>
   <script src="wager-raffle.js"></script>
+  <script src="raffles.js"></script>
 </body>
 </html>

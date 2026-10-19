@@ -22,7 +22,9 @@
   var prev = document.querySelector(".past__nav--prev");
   var next = document.querySelector(".past__nav--next");
   // dir: null shows the saved order (as in the design).
-  var state = { query: "", dir: null, active: [], past: [], live: false, mine: null };
+  var state = { query: "", dir: null, active: [], past: [], live: false, mine: null, wager: [] };
+  // Wager raffles (automatic entry) are drawn by wager-raffle.js in the same card design
+  var WR = function () { return window.RekojWagerRaffle; };
 
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -125,22 +127,31 @@
 
   function renderActive() {
     var q = state.query.trim().toLowerCase();
-    var list = state.active
-      .map(function (r, i) { return { r: r, i: i }; })
-      .filter(function (x) { return !q || (x.r.game + " " + x.r.prize).toLowerCase().indexOf(q) !== -1; })
+    // Wager raffles first (they're for everyone), then the join raffles
+    var items = (WR() ? state.wager.filter(function (w) { return w.state !== "complete"; }) : [])
+      .map(function (w) { return { w: w, text: w.title + " " + w.casinoName, value: w.prizePool }; })
+      .concat(state.active.map(function (r) { return { r: r, text: r.game + " " + r.prize, value: r.value }; }));
+    var list = items
+      .map(function (x, i) { x.i = i; return x; })
+      .filter(function (x) { return !q || x.text.toLowerCase().indexOf(q) !== -1; })
       .sort(function (a, b) {
         if (!state.dir) return a.i - b.i;
-        var d = state.dir === "asc" ? a.r.value - b.r.value : b.r.value - a.r.value;
+        var d = state.dir === "asc" ? a.value - b.value : b.value - a.value;
         return d || a.i - b.i;
       });
-    grid.innerHTML = list.map(function (x) { return activeHTML(x.r); }).join("");
+    grid.innerHTML = list.map(function (x) { return x.w ? WR().cardHTML(x.w) : activeHTML(x.r); }).join("");
     empty.hidden = list.length > 0;
-    if (!state.active.length) empty.textContent = "No raffles are running right now. Check back soon!";
+    if (!items.length) empty.textContent = "No raffles are running right now. Check back soon!";
     else empty.textContent = "No raffles match your search.";
   }
 
   function renderPast() {
-    rail.innerHTML = state.past.map(pastHTML).join("") ||
+    var when = function (x) { return x.w ? x.w.completedAt || x.w.end : x.r.drawnAt || Date.parse(x.r.endsAt); };
+    var items = (WR() ? state.wager.filter(function (w) { return w.state === "complete"; }) : [])
+      .map(function (w) { return { w: w }; })
+      .concat(state.past.map(function (r) { return { r: r }; }))
+      .sort(function (a, b) { return when(b) - when(a); });
+    rail.innerHTML = items.map(function (x) { return x.w ? WR().pastHTML(x.w) : pastHTML(x.r); }).join("") ||
       '<p class="past__empty">Finished raffles and their winners will show here.</p>';
     updateNav();
   }
@@ -152,6 +163,10 @@
   }
 
   function load() {
+    var wager = R.api("/api/wager-raffles").then(function (d) {
+      state.wager = d.raffles || [];
+      if (WR()) WR().setData(state.wager, d.signedIn);
+    }).catch(function () { /* keep the last ones */ });
     return R.api("/api/raffles").then(function (data) {
       state.active = data.active || [];
       state.past = data.past || [];
@@ -159,7 +174,7 @@
       return loadMine();
     }).catch(function () {
       if (!state.live) fallback();
-    }).then(function () {
+    }).then(function () { return wager; }).then(function () {
       renderActive();
       renderPast();
     });
@@ -192,6 +207,8 @@
   }
 
   grid.addEventListener("click", function (e) {
+    var wr = e.target.closest("[data-wr-open]");
+    if (wr && WR()) return WR().open(wr.getAttribute("data-wr-open"));
     var btn = e.target.closest("[data-join]");
     if (!btn || btn.disabled) return;
     var r = state.active.filter(function (x) { return x.id === btn.getAttribute("data-join"); })[0];
@@ -232,6 +249,8 @@
   /* ---------------- winners ---------------- */
 
   rail.addEventListener("click", function (e) {
+    var wr = e.target.closest("[data-wr-open]");
+    if (wr && WR()) return WR().open(wr.getAttribute("data-wr-open"));
     var btn = e.target.closest("[data-view]");
     if (!btn) return;
     var r = state.past.filter(function (x) { return x.id === btn.getAttribute("data-view"); })[0];

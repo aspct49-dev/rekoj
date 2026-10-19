@@ -1,27 +1,32 @@
 /*
- * Wager Raffle on the Raffles page: everyone who wagers under the code during
- * the period is entered automatically (server/wagerraffles.js). Shows the
- * countdown, how tickets work, the viewer's own tickets, the winners, every
- * entry with its odds, and once finished, a Verify button that re-runs every
- * draw in the browser from the revealed seed.
+ * Wager Raffles on the Raffles page (server/wagerraffles.js): everyone who
+ * wagers under the code during the period is entered automatically.
+ *
+ * raffles.js shows them as normal raffle cards (Active Raffles while they
+ * count or draw, Past Raffles once finished) using cardHTML / pastHTML here.
+ * Clicking one opens the details in a dialog: how it works, the viewer's own
+ * tickets, the winners, every entry with its odds, and once finished, a
+ * Verify button that re-runs every draw in the browser from the revealed
+ * seed. /raffles#wager-<id> opens one directly.
  */
 (function () {
   "use strict";
 
   var R = window.Rekoj;
   var C = window.REKOJ_CONTENT || {};
-  var box = document.getElementById("wagerRaffle");
-  var section = document.getElementById("wagerRaffleSection");
-  if (!box || !section) return;
-
-  var state = { list: [], pick: null, signedIn: false, showAll: false };
   var esc = R.esc;
+  var data = { list: [], signedIn: false };
+  var dialog = null, openId = null, showAll = false;
+
   var usd = function (n, d) { return "$" + R.money(n, d == null ? (n % 1 ? 2 : 0) : d); };
   var pct = function (x) { return (x * 100).toFixed(x >= 0.1 ? 1 : 2) + "%"; };
+  var plural = function (n, one, many) { return R.money(n, 0) + " " + (n === 1 ? one : many); };
   var day = function (ms) {
     return new Date(ms).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", timeZone: "UTC" }) + " UTC";
   };
   var thumb = function (t) { return t ? (C.raffleThumbs && C.raffleThumbs[t]) || t : null; };
+  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  function ordinal(n) { var s = ["th", "st", "nd", "rd"], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
 
   var CHIP = {
     counting: ["Counting tickets", "pending"],
@@ -34,6 +39,53 @@
   function countdown(ms) {
     var s = Math.max(0, Math.floor((ms - Date.now()) / 1000));
     return R.pad(Math.floor(s / 86400)) + "D " + R.pad(Math.floor((s % 86400) / 3600)) + "H " + R.pad(Math.floor((s % 3600) / 60)) + "M " + R.pad(s % 60) + "S";
+  }
+
+  /* ---------------- cards (the raffle card design) ---------------- */
+
+  function picture(w, cls) {
+    var img = thumb(w.thumb);
+    return img ? '<img src="' + esc(img) + '" alt="" loading="lazy" />'
+      : '<div class="' + cls + '"><span>Wager raffle</span><b>' + usd(w.prizePool, 0) + "</b><small>" + esc(w.casinoName) + "</small></div>";
+  }
+
+  /** Active card: same layout as a join raffle; the button opens the details. */
+  function cardHTML(w) {
+    var timer = w.state === "counting" ? '<span data-ends="' + new Date(w.end).toISOString() + '">' + (R.shortCountdown(new Date(w.end).toISOString()) || "ENDED") + "</span>"
+      : w.state === "upcoming" ? "<span>STARTS " + esc(new Date(w.start).toLocaleDateString("en-GB", { day: "numeric", month: "short", timeZone: "UTC" }).toUpperCase()) + "</span>"
+      : "<span>" + (w.state === "locked" ? "DRAWING NOW" : "DRAWING SOON") + "</span>";
+    var label = w.mine ? "YOUR TICKETS: " + R.money(w.mine.tickets, 0) : "VIEW · AUTO ENTRY";
+    return (
+      '<article class="raffle raffle--wager' + (w.mine ? " has-tickets" : "") + '" data-wr-open="' + esc(w.id) + '" tabindex="-1">' +
+        '<div class="raffle__thumb">' + picture(w, "raffle__auto") +
+          '<span class="raffle__timer"><img src="/assets/raffles/icon-clock.svg" alt="" width="12" height="12" />' + timer + "</span>" +
+          '<span class="raffle__rule"><b>' + esc(w.casinoName.toUpperCase()) + "</b>" + usd(w.unit, 0) + " = 1 TICKET</span>" +
+        "</div>" +
+        '<h2 class="raffle__title">' + esc(w.title) + "<br />" + usd(w.prizePool, 0) + " Prize Pool</h2>" +
+        '<p class="raffle__stat raffle__stat--winners"><img src="/assets/raffles/icon-winners.svg" alt="" width="13" height="13" />' + plural(w.drawsTotal, "Winner", "Winners") + "</p>" +
+        '<p class="raffle__stat raffle__stat--entries"><img src="/assets/raffles/icon-entries.svg" alt="" width="12" height="13" />' + plural(w.entries.length, "Entry", "Entries") + "</p>" +
+        '<button class="raffle__join" type="button" data-wr-open="' + esc(w.id) + '">' + label + "</button>" +
+      "</article>"
+    );
+  }
+
+  /** Past card: same layout as a finished join raffle. */
+  function pastHTML(w) {
+    var d = new Date(w.completedAt || w.end);
+    return (
+      '<article class="past-raffle past-raffle--wager">' +
+        '<div class="past-raffle__thumb">' + picture(w, "raffle__auto raffle__auto--sm") +
+          '<span class="past-raffle__ended"><img src="/assets/raffles/icon-clock-sm.svg" alt="" width="11" height="11" />' +
+            "<span>Ended " + MONTHS[d.getUTCMonth()] + " " + ordinal(d.getUTCDate()) + "</span></span>" +
+        "</div>" +
+        '<div class="past-raffle__info">' +
+          '<h3 class="past-raffle__title">' + esc(w.title) + "<br />" + usd(w.prizePool, 0) + " Prize Pool</h3>" +
+          '<p class="past-raffle__stat past-raffle__stat--winners"><img src="/assets/raffles/icon-winners-sm.svg" alt="" width="11" height="11" />' + plural(w.drawsTotal, "Winner", "Winners") + "</p>" +
+          '<p class="past-raffle__stat past-raffle__stat--entries"><img src="/assets/raffles/icon-entries-sm.svg" alt="" width="11" height="12" />' + plural(w.entries.length, "Entry", "Entries") + "</p>" +
+          '<button class="past-raffle__view" type="button" data-wr-open="' + esc(w.id) + '">VIEW</button>' +
+        "</div>" +
+      "</article>"
+    );
   }
 
   /* ---------------- verify (same maths as the server) ---------------- */
@@ -49,32 +101,31 @@
       return Array.prototype.map.call(new Uint8Array(buf), function (x) { return ("0" + x.toString(16)).slice(-2); }).join("");
     });
   }
-  /** Re-run every recorded draw; resolves to a list of { n, ok, index, ticket } */
+  /** Re-run every recorded draw; resolves to [{ n, ok }] */
   function verify(r) {
     var out = [];
     var step = function (k) {
       if (k >= r.draws.length) return Promise.resolve(out);
-      var prev = r.draws.slice(0, k);
       var wins = {}, gone = {};
-      prev.forEach(function (d) { if (d.rerolledAt) gone[d.index] = true; else wins[d.index] = (wins[d.index] || 0) + 1; });
+      r.draws.slice(0, k).forEach(function (d) { if (d.rerolledAt) gone[d.index] = true; else wins[d.index] = (wins[d.index] || 0) + 1; });
       var pool = r.entries.map(function (e, i) { return { e: e, i: i }; }).filter(function (x) { return !gone[x.i] && (wins[x.i] || 0) < r.maxWins; });
       var total = pool.reduce(function (s, x) { return s + x.e.tickets; }, 0);
       return hmacFloat(r.seed, r.id + ":" + k + ":0").then(function (f) {
         var ticket = Math.min(total - 1, Math.floor(f * total)), at = 0, index = -1;
         for (var j = 0; j < pool.length; j++) { at += pool[j].e.tickets; if (ticket < at) { index = pool[j].i; break; } }
         var d = r.draws[k];
-        out.push({ n: k, ok: index === d.index && ticket === d.ticket && total === d.pool, index: index, ticket: ticket });
+        out.push({ n: k, ok: index === d.index && ticket === d.ticket && total === d.pool });
         return step(k + 1);
       });
     };
     return step(0);
   }
 
-  /* ---------------- render ---------------- */
+  /* ---------------- details (in the dialog) ---------------- */
 
   function mineHTML(r) {
-    if (!state.signedIn) {
-      return '<p class="wr-you__text">Log in to see your tickets and odds.</p><a class="btn btn--dark wr-you__btn" href="' + R.loginUrl("/raffles#wager-raffle") + '">Log in with Kick</a>';
+    if (!data.signedIn) {
+      return '<p class="wr-you__text">Log in to see your tickets and odds.</p><a class="btn btn--dark wr-you__btn" href="' + R.loginUrl("/raffles#wager-" + r.id) + '">Log in with Kick</a>';
     }
     if (!r.mine) {
       return '<p class="wr-you__text">No tickets yet. Every ' + usd(r.unit) + " you wager on " + esc(r.casinoName) + " under code <b>" + esc(R.config.code) +
@@ -93,7 +144,7 @@
     return '<section class="wr-card wr-winners"><h3 class="wr-card__title">Winners <span class="wr-muted">' + won + " of " + r.drawsTotal + "</span></h3><ol>" +
       r.draws.map(function (d) {
         var you = r.mine && d.index === r.mine.index;
-        return '<li class="' + (d.rerolledAt ? "is-rerolled" : "") + '"><span class="wr-winners__n">' + (d.n + 1) + '</span><b>' + esc(d.name) + "</b>" +
+        return '<li class="' + (d.rerolledAt ? "is-rerolled" : "") + '"><span class="wr-winners__n">' + (d.n + 1) + "</span><b>" + esc(d.name) + "</b>" +
           (you ? ' <span class="pill pill--done">You</span>' : "") +
           '<span class="wr-winners__prize">' + (d.rerolledAt ? "rerolled" : usd(d.prize)) + "</span></li>";
       }).join("") + "</ol></section>";
@@ -104,14 +155,14 @@
       return '<p class="wr-empty">' + (r.state === "upcoming" ? "Tickets start counting " + day(r.start) + "." : "No tickets yet. The first " + usd(r.unit) + " wagered under " + esc(R.config.code) + " gets the first one.") + "</p>";
     }
     var rows = r.entries.map(function (e, i) { return { e: e, i: i }; }).sort(function (a, b) { return b.e.tickets - a.e.tickets || a.i - b.i; });
-    var shown = state.showAll ? rows : rows.slice(0, 25);
+    var shown = showAll ? rows : rows.slice(0, 25);
     return '<div class="wr-table" role="table" aria-label="Entries"><div class="wr-table__row wr-table__head" role="row"><span role="columnheader">#</span><span role="columnheader">Player</span><span role="columnheader">Wagered</span><span role="columnheader">Tickets</span><span role="columnheader">Odds</span></div>' +
       shown.map(function (x, k) {
         var you = r.mine && x.i === r.mine.index;
         return '<div class="wr-table__row' + (you ? " is-you" : "") + '" role="row"><span role="cell">' + (k + 1) + '</span><span role="cell">' + esc(x.e.name) + (you ? ' <span class="pill pill--done">You</span>' : "") + "</span>" +
           '<span role="cell">' + usd(x.e.amount, 0) + '</span><span role="cell"><b>' + R.money(x.e.tickets, 0) + '</b></span><span role="cell">' + pct(x.e.odds) + "</span></div>";
       }).join("") + "</div>" +
-      (rows.length > 25 ? '<button class="btn btn--dark wr-more" type="button" data-wr-more>' + (state.showAll ? "Show top 25" : "Show all " + rows.length) + "</button>" : "");
+      (rows.length > 25 ? '<button class="btn btn--dark wr-more" type="button" data-wr-more>' + (showAll ? "Show top 25" : "Show all " + rows.length) + "</button>" : "");
   }
 
   function fairHTML(r) {
@@ -122,53 +173,53 @@
         : '<p class="wr-muted">The seed is revealed when the raffle is finished.</p>');
   }
 
-  function render() {
-    var r = state.list.filter(function (x) { return x.id === state.pick; })[0] || state.list[0];
-    if (!r) { section.hidden = true; return; }
-    section.hidden = false;
+  function detailHTML(r) {
     var chip = CHIP[r.state] || ["", "muted"];
     var img = thumb(r.thumb);
-    var others = state.list.filter(function (x) { return x.id !== r.id; });
-    box.innerHTML =
-      '<article class="wr">' +
-        '<header class="wr-head">' +
-          (img ? '<img class="wr-head__thumb" src="' + esc(img) + '" alt="" />' : '<span class="wr-head__badge" aria-hidden="true">' + esc(r.casinoName.toUpperCase()) + "</span>") +
-          '<div class="wr-head__main">' +
-            '<h3 class="wr-head__title">' + esc(r.title) + ' <span class="pill pill--' + chip[1] + '">' + chip[0] + "</span></h3>" +
-            '<p class="wr-head__prize"><b>' + usd(r.prizePool) + "</b> prize pool · " + r.drawsTotal + " draw" + (r.drawsTotal === 1 ? "" : "s") + " of " + usd(r.prizePerDraw) +
-              " · up to " + r.maxWins + " win" + (r.maxWins === 1 ? "" : "s") + " each</p>" +
-            '<p class="wr-head__when">' + (r.state === "counting" ? 'Tickets count until ' + day(r.end) + ' · <b class="wr-timer" data-wr-ends="' + r.end + '">' + countdown(r.end) + "</b>"
-              : r.state === "upcoming" ? "Tickets start counting " + day(r.start)
-              : "Counted " + day(r.start) + " → " + day(r.end)) + "</p>" +
-          "</div>" +
-        "</header>" +
-        '<div class="wr-how">' +
-          '<div class="wr-how__item"><b>Wager under ' + esc(R.config.code) + "</b><span>On " + esc(r.casinoName) + ", during the counting period.</span></div>" +
-          '<div class="wr-how__item"><b>' + usd(r.unit) + " = 1 ticket</b><span>You're entered automatically. Nothing to join.</span></div>" +
-          '<div class="wr-how__item"><b>More tickets, better odds</b><span>Each draw picks one ticket, so your chance is your share of them.</span></div>' +
+    return '<article class="wr">' +
+      '<header class="wr-head">' +
+        (img ? '<img class="wr-head__thumb" src="' + esc(img) + '" alt="" />' : '<span class="wr-head__badge" aria-hidden="true">' + esc(r.casinoName.toUpperCase()) + "</span>") +
+        '<div class="wr-head__main">' +
+          '<h2 class="wr-head__title" id="wrTitle">' + esc(r.title) + ' <span class="pill pill--' + chip[1] + '">' + chip[0] + "</span></h2>" +
+          '<p class="wr-head__prize"><b>' + usd(r.prizePool) + "</b> prize pool · " + plural(r.drawsTotal, "draw", "draws") + " of " + usd(r.prizePerDraw) +
+            " · up to " + plural(r.maxWins, "win", "wins") + " each</p>" +
+          '<p class="wr-head__when">' + (r.state === "counting" ? "Tickets count until " + day(r.end) + ' · <b class="wr-timer" data-wr-ends="' + r.end + '">' + countdown(r.end) + "</b>"
+            : r.state === "upcoming" ? "Tickets start counting " + day(r.start)
+            : "Counted " + day(r.start) + " → " + day(r.end)) + "</p>" +
         "</div>" +
-        '<div class="wr-grid">' +
-          '<div class="wr-side">' +
-            '<section class="wr-card wr-you"><h3 class="wr-card__title">Your tickets</h3>' + mineHTML(r) + "</section>" +
-            drawsHTML(r) +
-            '<section class="wr-card wr-fair"><h3 class="wr-card__title">Provably fair</h3>' + fairHTML(r) + "</section>" +
-          "</div>" +
-          '<section class="wr-card wr-entries"><h3 class="wr-card__title">Entries <span class="wr-muted">' + R.money(r.entries.length, 0) + " players · " + R.money(r.totalTickets, 0) + " tickets</span></h3>" +
-            (r.error ? '<p class="wr-muted">' + esc(r.error) + "</p>" : "") + entriesHTML(r) + "</section>" +
+        '<button class="wr-close" type="button" data-wr-close aria-label="Close">×</button>' +
+      "</header>" +
+      '<div class="wr-how">' +
+        '<div class="wr-how__item"><b>Wager under ' + esc(R.config.code) + "</b><span>On " + esc(r.casinoName) + ", during the counting period.</span></div>" +
+        '<div class="wr-how__item"><b>' + usd(r.unit) + " = 1 ticket</b><span>You're entered automatically. Nothing to join.</span></div>" +
+        '<div class="wr-how__item"><b>More tickets, better odds</b><span>Each draw picks one ticket, so your chance is your share of them.</span></div>' +
+      "</div>" +
+      '<div class="wr-grid">' +
+        '<div class="wr-side">' +
+          '<section class="wr-card wr-you"><h3 class="wr-card__title">Your tickets</h3>' + mineHTML(r) + "</section>" +
+          drawsHTML(r) +
+          '<section class="wr-card wr-fair"><h3 class="wr-card__title">Provably fair</h3>' + fairHTML(r) + "</section>" +
         "</div>" +
-        (others.length ? '<div class="wr-others"><span class="wr-muted">Other wager raffles:</span>' + others.map(function (o) {
-          return '<button class="wr-others__btn" type="button" data-wr-pick="' + esc(o.id) + '">' + esc(o.title) + " · " + (CHIP[o.state] || [""])[0] + "</button>";
-        }).join("") + "</div>" : "") +
-      "</article>";
+        '<section class="wr-card wr-entries"><h3 class="wr-card__title">Entries <span class="wr-muted">' + plural(r.entries.length, "player", "players") + " · " + plural(r.totalTickets, "ticket", "tickets") + "</span></h3>" +
+          (r.error ? '<p class="wr-muted">' + esc(r.error) + "</p>" : "") + entriesHTML(r) + "</section>" +
+      "</div>" +
+    "</article>";
+  }
 
-    var more = box.querySelector("[data-wr-more]");
-    if (more) more.addEventListener("click", function () { state.showAll = !state.showAll; render(); });
-    Array.prototype.forEach.call(box.querySelectorAll("[data-wr-pick]"), function (b) {
-      b.addEventListener("click", function () { state.pick = b.getAttribute("data-wr-pick"); state.showAll = false; render(); });
-    });
-    var v = box.querySelector("[data-wr-verify]");
+  function find(id) { return data.list.filter(function (x) { return x.id === id; })[0]; }
+
+  function paint() {
+    var r = find(openId);
+    if (!dialog || !r) return;
+    var keepScroll = dialog.scrollTop;
+    dialog.innerHTML = detailHTML(r);
+    dialog.scrollTop = keepScroll;
+    dialog.querySelector("[data-wr-close]").addEventListener("click", function () { dialog.close(); });
+    var more = dialog.querySelector("[data-wr-more]");
+    if (more) more.addEventListener("click", function () { showAll = !showAll; paint(); });
+    var v = dialog.querySelector("[data-wr-verify]");
     if (v) v.addEventListener("click", function () {
-      var out = box.querySelector("[data-wr-verify-out]");
+      var out = dialog.querySelector("[data-wr-verify-out]");
       v.disabled = true;
       out.textContent = "Checking…";
       sha256Hex(r.seed).then(function (h) {
@@ -183,18 +234,40 @@
     });
   }
 
-  function load() {
-    return R.api("/api/wager-raffles").then(function (d) {
-      state.list = d.raffles || [];
-      state.signedIn = !!d.signedIn;
-      render();
-    }).catch(function () { /* keep what's shown */ });
+  function open(id) {
+    if (!find(id)) return;
+    if (!dialog) {
+      dialog = document.createElement("dialog");
+      dialog.className = "dialog dialog--wr";
+      dialog.setAttribute("aria-labelledby", "wrTitle");
+      dialog.addEventListener("click", function (e) { if (e.target === dialog) dialog.close(); });
+      dialog.addEventListener("close", function () {
+        openId = null;
+        if (/^#wager-/.test(location.hash)) history.replaceState(null, "", location.pathname + location.search);
+      });
+      document.body.appendChild(dialog);
+    }
+    openId = id;
+    showAll = false;
+    paint();
+    if (!dialog.open) dialog.showModal();
+    dialog.scrollTop = 0;
+    history.replaceState(null, "", "#wager-" + id);
   }
 
-  load();
+  /** raffles.js hands over each refresh; an open dialog follows along. */
+  function setData(list, signedIn) {
+    data.list = list || [];
+    data.signedIn = !!signedIn;
+    if (openId) paint();
+    var m = /^#wager-([0-9a-f-]{36})$/.exec(location.hash);
+    if (m && !openId && find(m[1])) open(m[1]);
+  }
+
   setInterval(function () {
-    var t = box.querySelector("[data-wr-ends]");
+    var t = dialog && dialog.open && dialog.querySelector("[data-wr-ends]");
     if (t) t.textContent = countdown(Number(t.getAttribute("data-wr-ends")));
   }, 1000);
-  setInterval(load, 60000);
+
+  window.RekojWagerRaffle = { cardHTML: cardHTML, pastHTML: pastHTML, open: open, setData: setData };
 })();

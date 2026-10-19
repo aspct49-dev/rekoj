@@ -51,3 +51,19 @@
       </div>
     </div>
   </header>
+  <script>
+    // Logged in last time? Show the account chip from the first frame (site.js confirms with the server).
+    (function () {
+      try {
+        var a = JSON.parse(localStorage.getItem("rekoj-account") || "null");
+        var box = document.querySelector("[data-account]"), btn = document.querySelector("[data-login]");
+        if (!a || !a.user || !box || !btn) return;
+        btn.hidden = true;
+        box.hidden = false;
+        box.querySelector(".account__avatar").src = a.user.avatar || "/assets/shared/rekoj-logo.webp";
+        box.querySelector(".account__name").textContent = a.user.username;
+        box.querySelector("[data-points]").textContent = a.points == null ? "—" : Number(a.points).toLocaleString("en-US");
+        box.querySelector("[data-admin-link]").hidden = !a.admin;
+      } catch (e) { /* no storage: the chip appears once site.js hears from the server */ }
+    })();
+  </script>

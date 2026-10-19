@@ -1460,6 +1460,8 @@ body[data-board="razedio"] .card--1 {
    Account chip (signed in) — takes the LOGIN button's place
    ------------------------------------------------------------------ */
 .nav-login[hidden], .account[hidden] { display: none; }
+/* Remembered as logged in (set in <head>): no LOGIN flash while the page starts */
+.has-account [data-login] { visibility: hidden; }
 .account { position: relative; }
 .account__chip {
   display: flex;
@@ -2440,9 +2442,9 @@ html.is-overlay, html.is-overlay body { background: transparent; }
    holds the new page back to snapshot the old one. Pages are prefetched on
    hover (the speculationrules in each page's <head>), so most switches are
    instant. */
-.page { animation: page-in .2s ease-out both; }
-@keyframes page-in { from { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .page { animation: none; } }
+.page > :not(.topbar) { animation: page-in .28s cubic-bezier(.2, .7, .2, 1) both; }
+@keyframes page-in { from { opacity: 0; translate: 0 6px; } }
+@media (prefers-reduced-motion: reduce) { .page > :not(.topbar) { animation: none; } }
 
 /* Sections and cards ease up as they scroll into view. Driven by the scroll
    position (no script), so content already on screen never flickers, and

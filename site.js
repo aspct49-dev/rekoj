@@ -268,13 +268,36 @@
 
   function pointsText(points) { return points ? money(points.points, 0) : "—"; }
 
+  /*
+   * The last confirmed account (name, avatar, points), so the next page can
+   * show the account chip from its first frame instead of flashing LOGIN
+   * while /api/me answers (the header partial reads it; the session cookie
+   * itself is HttpOnly). Only what the chip shows; cleared on log out.
+   */
+  var ACCOUNT_KEY = "rekoj-account";
+  function rememberAccount(data) {
+    try {
+      if (data.user) {
+        localStorage.setItem(ACCOUNT_KEY, JSON.stringify({
+          user: { username: data.user.username, avatar: data.user.avatar || null },
+          admin: !!data.admin, points: data.points ? data.points.points : null,
+        }));
+      } else if (!data.offline) localStorage.removeItem(ACCOUNT_KEY);
+    } catch (e) { /* private mode: no remembering, the chip just appears a moment later */ }
+  }
+  function forgetAccount() { try { localStorage.removeItem(ACCOUNT_KEY); } catch (e) { /* ignore */ } }
+
   function renderAccount(data) {
     var loginBtn = document.querySelector("[data-login]");
     var box = document.querySelector("[data-account]");
     if (!box || !loginBtn) return;
+    rememberAccount(data);
     if (!data.user) {
+      // Couldn't reach the server: keep whatever the page already shows
+      if (data.offline && !box.hidden) return;
       box.hidden = true;
       loginBtn.hidden = false;
+      document.documentElement.classList.remove("has-account");
       return;
     }
     var u = data.user;
@@ -311,6 +334,7 @@
       document.addEventListener("click", function (e) { if (!box.contains(e.target)) close(); });
       document.addEventListener("keydown", function (e) { if (e.key === "Escape") close(); });
       box.querySelector("[data-logout]").addEventListener("click", function () {
+        forgetAccount();
         api("/api/auth/logout", {}).finally(function () { location.reload(); });
       });
     }
@@ -477,6 +501,7 @@
     login: login,
     loginUrl: loginUrl,
     refreshPoints: refreshPoints,
+    forgetAccount: forgetAccount,
     confirm: confirmDialog,
   };
 

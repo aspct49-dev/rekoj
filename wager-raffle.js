@@ -125,11 +125,12 @@
 
   function mineHTML(r) {
     if (!data.signedIn) {
-      return '<p class="wr-you__text">Log in to see your tickets and odds.</p><a class="btn btn--dark wr-you__btn" href="' + R.loginUrl("/raffles#wager-" + r.id) + '">Log in with Kick</a>';
+      return '<p class="wr-you__text">You are counted automatically: <b>no account on this site needed</b>. Everyone wagering under ' + esc(R.config.code) +
+        " on " + esc(r.casinoName) + ' is in the draw. Log in only if you want your own tickets and odds shown here.</p><a class="btn btn--dark wr-you__btn" href="' + R.loginUrl("/raffles#wager-" + r.id) + '">Log in with Kick</a>';
     }
     if (!r.mine) {
-      return '<p class="wr-you__text">No tickets yet. Every ' + usd(r.unit) + " you wager on " + esc(r.casinoName) + " under code <b>" + esc(R.config.code) +
-        '</b> is a ticket, automatically.</p><p class="wr-you__hint">Already playing? <a href="/profile#links">Link your ' + esc(r.casinoName) + " username</a> so we can show you yours.</p>";
+      return '<p class="wr-you__text">Every ' + usd(r.unit) + " you wager on " + esc(r.casinoName) + " under code <b>" + esc(R.config.code) +
+        '</b> is a ticket, automatically, whether or not you link anything here.</p><p class="wr-you__hint">To see your own tickets on this page, <a href="/profile#links">link your ' + esc(r.casinoName) + " username</a>. You're counted either way.</p>";
     }
     var m = r.mine;
     return '<div class="wr-you__stats"><span><b>' + R.money(m.tickets, 0) + "</b><small>ticket" + (m.tickets === 1 ? "" : "s") + "</small></span>" +
@@ -191,7 +192,7 @@
       "</header>" +
       '<div class="wr-how">' +
         '<div class="wr-how__item"><b>Wager under ' + esc(R.config.code) + "</b><span>On " + esc(r.casinoName) + ", during the counting period.</span></div>" +
-        '<div class="wr-how__item"><b>' + usd(r.unit) + " = 1 ticket</b><span>You're entered automatically. Nothing to join.</span></div>" +
+        '<div class="wr-how__item"><b>' + usd(r.unit) + " = 1 ticket</b><span>Entered automatically. No sign-up, no account here, nothing to join.</span></div>" +
         '<div class="wr-how__item"><b>More tickets, better odds</b><span>Each draw picks one ticket, so your chance is your share of them.</span></div>' +
       "</div>" +
       '<div class="wr-grid">' +

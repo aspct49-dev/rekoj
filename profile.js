@@ -141,6 +141,7 @@
       "</section>";
 
     root.querySelector("[data-profile-logout]").addEventListener("click", function () {
+      R.forgetAccount();
       R.api("/api/auth/logout", {}).finally(function () { location.href = "/"; });
     });
     Array.prototype.forEach.call(root.querySelectorAll("[data-link]"), function (f) {

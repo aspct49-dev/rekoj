@@ -4,6 +4,8 @@
   <meta charset="utf-8" />
   <!-- Start loading a page when its link is hovered/pressed (not login, admin or overlays) -->
   <script type="speculationrules">{"prefetch":[{"where":{"and":[{"href_matches":"/*"},{"not":{"href_matches":["/api/*","/admin*","/overlay*"]}}]},"eagerness":"moderate"}]}</script>
+  <!-- Logged in last time? Keep LOGIN hidden from the first frame (the header fills in the account chip) -->
+  <script>try{localStorage.getItem("rekoj-account")&&document.documentElement.classList.add("has-account")}catch(e){}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Contact RekoJ | Leaderboard, Raffle & Points Store Help</title>
   <meta name="description" content="Send RekoJ a message about the leaderboards, wager raffles, Points Store orders, your linked casino account or your data." />
@@ -109,6 +111,22 @@
       </div>
     </div>
   </header>
+  <script>
+    // Logged in last time? Show the account chip from the first frame (site.js confirms with the server).
+    (function () {
+      try {
+        var a = JSON.parse(localStorage.getItem("rekoj-account") || "null");
+        var box = document.querySelector("[data-account]"), btn = document.querySelector("[data-login]");
+        if (!a || !a.user || !box || !btn) return;
+        btn.hidden = true;
+        box.hidden = false;
+        box.querySelector(".account__avatar").src = a.user.avatar || "/assets/shared/rekoj-logo.webp";
+        box.querySelector(".account__name").textContent = a.user.username;
+        box.querySelector("[data-points]").textContent = a.points == null ? "—" : Number(a.points).toLocaleString("en-US");
+        box.querySelector("[data-admin-link]").hidden = !a.admin;
+      } catch (e) { /* no storage: the chip appears once site.js hears from the server */ }
+    })();
+  </script>
   <!-- /layout:header -->
 
     <main class="legal">

@@ -19,6 +19,7 @@
  *   POST /api/me/links       {casino, username}   ask to link a casino username
  *   POST /api/me/links/cancel {casino}            withdraw a request still waiting
  *   GET  /api/me/earnings               wager points this month (pays anything owed first)
+ *   GET  /api/leaderboard/archive       past winners: every finished month, both boards (names masked)
  * Admin (Kick usernames in ADMIN_KICK_USERNAMES)
  *   GET  /api/admin/overview
  *   GET  /api/admin/store               POST /api/admin/store         {item}  create or update
@@ -44,8 +45,10 @@
  *   GET  /api/admin/earnings            POST /api/admin/earnings/run  pay wager points to everyone owed
  *   GET  /api/admin/users
  *   GET  /api/admin/points?name=        POST /api/admin/points        {name, delta, reason}
+ *   GET  /api/admin/leaderboards        POST /api/admin/leaderboards  {board, month, action: record|rerecord|remove}
  * Cron (Vercel, daily; Authorization: Bearer CRON_SECRET)
- *   GET  /api/cron/wager-points         pay wager points to everyone owed
+ *   GET  /api/cron/wager-points         pay wager points to everyone owed (and keep last month's
+ *                                       leaderboard winners if nobody has opened the board since)
  * Auth: see kick.js.
  *
  * Wager raffles: a viewer links their casino username (an admin approves it),
@@ -63,6 +66,7 @@ const kick = require("./kick");
 const wager = require("./wager");
 const wagerRaffles = require("./wagerraffles");
 const earnings = require("./earnings");
+const leaderboards = require("./leaderboards");
 
 const TIERS = ["gold", "red", "purple", "blue"];
 const CASINO_IDS = Object.keys(wager.CASINOS);
@@ -1237,7 +1241,35 @@ async function cronWagerPoints(req, res) {
   const secret = process.env.CRON_SECRET;
   if (!secret) fail(503, "CRON_SECRET isn't set.");
   if (req.headers.authorization !== "Bearer " + secret) fail(401, "Not allowed.");
-  return json(res, 200, { summary: await earnings.creditAll("daily") });
+  const summary = await earnings.creditAll("daily");
+  await leaderboards.ensureAll();
+  return json(res, 200, { summary });
+}
+
+/* ---------------------------------------------------------------- past leaderboards */
+
+async function leaderboardArchive(req, res) {
+  await leaderboards.ensureAll();
+  // Finished months don't change often: let the edge keep them for a minute
+  return json(res, 200, { months: await leaderboards.publicList() }, { "Cache-Control": "public, s-maxage=60, stale-while-revalidate=300" });
+}
+
+async function adminLeaderboards(req, res) {
+  requireAdmin(req);
+  await leaderboards.ensureAll();
+  return json(res, 200, await leaderboards.adminView());
+}
+
+async function adminLeaderboardAction(req, res) {
+  const admin = requireAdmin(req);
+  const { board, month, action } = await readJson(req);
+  if (action === "record" || action === "rerecord") {
+    throttle("lb-record", 3000);
+    await leaderboards.adminRecord(String(board), String(month), admin.username, action === "rerecord");
+  } else if (action === "remove") {
+    await leaderboards.adminRemove(String(board), String(month), admin.username);
+  } else fail(400, "Unknown action.");
+  return json(res, 200, await leaderboards.adminView());
 }
 
 async function adminUsers(req, res) {
@@ -1329,6 +1361,9 @@ const ROUTES = {
   "GET /api/admin/earnings": adminEarnings,
   "POST /api/admin/earnings/run": adminEarningsRun,
   "GET /api/cron/wager-points": cronWagerPoints,
+  "GET /api/leaderboard/archive": leaderboardArchive,
+  "GET /api/admin/leaderboards": adminLeaderboards,
+  "POST /api/admin/leaderboards": adminLeaderboardAction,
   "GET /api/admin/users": adminUsers,
   "GET /api/admin/points": adminPointsLookup,
   "POST /api/admin/points": adminPointsAdjust,

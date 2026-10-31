@@ -27,7 +27,8 @@
   function leaderboard() {
     var key = params.get("board") === "razedio" ? "razedio" : "razed";
     var board = R.config.boards[key];
-    var top = Math.min(board.places || 10, Math.max(3, Number(params.get("top")) || board.places || 10));
+    var month = R.config.season(key);
+    var top = Math.min(month.places, Math.max(3, Number(params.get("top")) || month.places));
     document.body.setAttribute("data-board", key);
     var entries = board.entries || [];
 
@@ -39,14 +40,14 @@
           '<span class="ov-row__place">' + (i + 1) + "</span>" +
           '<span class="ov-row__name">' + esc(R.maskName(e.name)) + "</span>" +
           '<span class="ov-row__wager"><span class="accent">$</span>' + R.money(e.wagered || 0, 2) + "</span>" +
-          '<span class="ov-row__prize"><span class="accent">$</span>' + R.money((board.prizes || [])[i] || 0, 0) + "</span>" +
+          '<span class="ov-row__prize"><span class="accent">$</span>' + R.money(month.prizes[i] || 0, 0) + "</span>" +
         "</li>";
       }
       root.innerHTML =
         '<section class="ov-panel ov-lb">' +
           '<header class="ov-lb__head">' + brand() +
-            '<span class="ov-lb__pool"><b>' + esc(board.prizePool) + "</b> " + esc(board.name) + " leaderboard</span></header>" +
-          '<p class="ov-lb__timer">Ends in <b data-ov-timer>' + countdown(board.endsAt) + "</b></p>" +
+            '<span class="ov-lb__pool"><b>' + esc(R.config.poolText(month)) + "</b> " + esc(board.name) + " leaderboard</span></header>" +
+          '<p class="ov-lb__timer">Ends in <b data-ov-timer>' + countdown(month.end) + "</b></p>" +
           '<ol class="ov-rows">' + rows + "</ol>" +
           '<p class="ov-foot">Code <b class="accent">' + esc(R.config.code) + "</b> on " + esc(board.name) + "</p>" +
         "</section>";
@@ -59,8 +60,16 @@
     load();
     setInterval(load, 60000);
     setInterval(function () {
+      if (Date.now() >= month.end) {
+        // The month ended: show the new one (its prizes, its countdown, its standings)
+        month = R.config.season(key);
+        entries = [];
+        render();
+        load();
+        return;
+      }
       var t = root.querySelector("[data-ov-timer]");
-      if (t) t.textContent = countdown(board.endsAt);
+      if (t) t.textContent = countdown(month.end);
     }, 1000);
   }
 

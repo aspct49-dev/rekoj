@@ -42,6 +42,8 @@ function defaults(table) {
     case "messages": return [];
     case "wagerRaffles": return [];
     case "earnings": return {};
+    case "leaderboardArchive": return [];
+    case "leaderboardLive": return {};
     case "shop":
       return C.store.map((item, i) => ({
         id: newId(), name: item.name, cost: item.cost, tier: item.tier, image: item.image,

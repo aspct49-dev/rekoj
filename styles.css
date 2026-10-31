@@ -598,6 +598,31 @@ body[data-board="razedio"] .card--1 {
   font-variant-numeric: tabular-nums;
 }
 .timer__value b { font-weight: 600; color: var(--num); }
+.timer__ends { margin-top: 8px; color: var(--muted); font-size: 13px; line-height: 16px; text-align: center; }
+.is-past .timer__value { color: var(--num); font-weight: 600; letter-spacing: .5px; }
+
+/* Past winners: the pills under the countdown */
+.lb-pills { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 811px; margin-top: 18px; }
+.lb-pills__months { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; width: 100%; }
+.lb-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  height: 32px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--panel);
+  box-shadow: inset 0 1px 0 0 var(--panel-edge);
+  color: #dadada;
+  font: 500 13px/1 var(--body);
+  letter-spacing: .3px;
+  cursor: pointer;
+}
+.lb-pill svg { flex: none; color: var(--accent); }
+.lb-pill--on { background: var(--brand-grad); box-shadow: none; color: #0d1015; }
+.lb-pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.lb-notice { margin-top: 14px; color: var(--muted); font-size: 14px; line-height: 18px; text-align: center; }
 
 /* Table ------------------------------------------------------------ */
 .table { width: 100%; max-width: 811px; margin-top: 44px; }
@@ -2399,17 +2424,17 @@ html.is-overlay, html.is-overlay body { background: transparent; }
    have no fill to darken and keep their own highlight.
    ------------------------------------------------------------------ */
 :is(.btn, .bonus__code, .bonus__visit, .bonus__cta, .teaser__cta, .given__cta, .home-hero__scroll, .sort,
-    .item__buy, .raffle__join, .past-raffle__view, .past__nav, .account__chip, .dialog__btn, .abtn, .admin-tile, .wr-others__btn) {
+    .item__buy, .raffle__join, .past-raffle__view, .past__nav, .account__chip, .dialog__btn, .abtn, .admin-tile, .wr-others__btn, .lb-pill) {
   transition: filter .25s ease, translate .15s ease, opacity .15s ease, background-color .25s ease, color .15s ease;
 }
 @media (hover: hover) and (pointer: fine) {
   :is(.btn, .bonus__code, .bonus__visit, .bonus__cta, .teaser__cta, .given__cta, .home-hero__scroll, .sort,
-      .item__buy, .raffle__join, .past-raffle__view, .past__nav, .account__chip, .dialog__btn, .abtn, .admin-tile):hover:not(:disabled) {
+      .item__buy, .raffle__join, .past-raffle__view, .past__nav, .account__chip, .dialog__btn, .abtn, .admin-tile, .lb-pill):hover:not(:disabled) {
     filter: brightness(.85);
   }
 }
 :is(.btn, .bonus__code, .bonus__visit, .bonus__cta, .teaser__cta, .given__cta, .home-hero__scroll, .sort,
-    .item__buy, .raffle__join, .past-raffle__view, .past__nav, .account__chip, .dialog__btn, .abtn, .admin-tile):active:not(:disabled) {
+    .item__buy, .raffle__join, .past-raffle__view, .past__nav, .account__chip, .dialog__btn, .abtn, .admin-tile, .lb-pill):active:not(:disabled) {
   translate: 0 1px;
 }
 

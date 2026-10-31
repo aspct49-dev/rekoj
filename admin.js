@@ -1115,6 +1115,88 @@
     }).catch(fail);
   };
 
+  /* ---------------- leaderboards (past winners) ---------------- */
+
+  // "30 Nov 2026, 21:00 CET": leaderboard times are Paris time, wherever you are.
+  function lbTime(ts) {
+    var tz = R.config.schedule.timeZone, d = new Date(ts);
+    return d.toLocaleDateString("en-GB", { timeZone: tz, day: "numeric", month: "short", year: "numeric" }) + ", " +
+      d.toLocaleTimeString("en-GB", { timeZone: tz, hour: "2-digit", minute: "2-digit", timeZoneName: "short" });
+  }
+  var LB_SOURCE = {
+    snapshot: "Standings the live board showed at the end",
+    api: "The casino\u2019s totals for the exact month",
+    "api-day": "Razed\u2019s totals to the end of that UTC day (nobody had the board open at the end, so wagers placed after 21:00 are in)",
+  };
+
+  views.leaderboards = function () {
+    R.api("/api/admin/leaderboards").then(render, fail);
+
+    function render(d) {
+      var boards = d.boards.map(function (b) {
+        var p = b.previous, snap = b.snapshot && p && b.snapshot.month === p.id ? b.snapshot : null;
+        return '<section class="admin-card">' +
+          '<h2 class="admin-card__title">' + esc(b.name) + " \u00b7 " + esc(b.current.name) + ' <span class="pill pill--done">Live</span></h2>' +
+          '<p class="admin-muted">' + dollars(b.current.pool) + " across " + b.current.prizes.length + " places (" + b.current.prizes.map(dollars).join(", ") + ")<br />" +
+            "Ends <b>" + lbTime(b.current.end) + "</b>" + (b.configured ? "" : ' \u00b7 <span class="admin-warn">no API key set</span>') + "</p>" +
+          (p ? '<p class="admin-muted">' + esc(p.name) + " (ended " + lbTime(p.end) + "): " +
+            (p.recorded ? '<span class="pill pill--done">Winners kept</span>' : '<span class="pill pill--pending">Not recorded yet</span> ' +
+              '<button class="abtn abtn--sm abtn--ok" type="button" data-lb="record" data-board="' + b.key + '" data-month="' + p.id + '">Record now</button>') +
+            (snap ? "<br />Last live standings saved " + lbTime(snap.at) : "") + "</p>" : "") +
+        "</section>";
+      }).join("");
+
+      var records = d.records.map(function (r) {
+        var pool = r.prizes.reduce(function (a, b) { return a + b; }, 0);
+        var rows = r.prizes.map(function (prize, i) {
+          var e = r.entries[i];
+          return "<tr><td>" + (i + 1) + "</td><td>" + (e ? "<b>" + esc(e.name) + "</b>" : '<span class="admin-muted">nobody</span>') + "</td><td>" +
+            (e ? dollars(e.wagered) : "") + "</td><td>" + dollars(prize) + "</td></tr>";
+        }).join("");
+        return '<section class="admin-card">' +
+          '<div class="wr-admin__head"><div><h2 class="admin-card__title">' + esc(r.name) + " \u00b7 " + esc(CASINO_NAME[r.board] || r.board) + "</h2>" +
+            '<p class="admin-muted">' + dollars(pool) + " pool \u00b7 ended " + lbTime(r.end) + "<br />" + esc(LB_SOURCE[r.source] || r.source) +
+              " \u00b7 standings from " + lbTime(r.standingsAt) + " \u00b7 recorded by " + esc(r.by) + "</p></div>" +
+            '<div class="admin-actions">' +
+              '<button class="abtn" type="button" data-lb="rerecord" data-board="' + r.board + '" data-month="' + r.id + '">Re-record from the API</button>' +
+              '<button class="abtn abtn--danger" type="button" data-lb="remove" data-board="' + r.board + '" data-month="' + r.id + '">Remove from site</button>' +
+            "</div></div>" +
+          '<div class="admin-table-wrap admin-table-wrap--flat"><table class="admin-table admin-table--tight"><thead><tr><th>#</th><th>' + esc(CASINO_NAME[r.board] || r.board) +
+            " username</th><th>Wagered</th><th>Prize</th></tr></thead><tbody>" + rows + "</tbody></table></div>" +
+        "</section>";
+      }).join("");
+
+      panel.innerHTML =
+        '<div class="admin-toolbar"><p class="admin-muted">Each board ends on the month\u2019s last day at 21:00 Paris time (CET, CEST in summer) and the next month starts straight away. ' +
+          "The final standings are kept automatically and shown on the leaderboard page under <b>Past winners</b> (names masked there; in full here, so you can pay the winners). " +
+          'Prizes per month are set in <code>data.js</code>.</p></div>' +
+        boards +
+        '<h2 class="admin-subtitle">Past winners</h2>' +
+        (records || '<p class="admin-empty">No finished months yet. October 2026 is recorded once it ends.</p>');
+
+      panel.querySelectorAll("[data-lb]").forEach(function (b) {
+        b.addEventListener("click", function () {
+          var action = b.getAttribute("data-lb"), board = b.getAttribute("data-board"), month = b.getAttribute("data-month");
+          var name = (CASINO_NAME[board] || board) + " " + month;
+          var ask = action === "rerecord"
+            ? R.confirm({ title: "Re-record " + name + "?", html: "<p>Replaces the kept standings with what " + esc(CASINO_NAME[board] || board) + "\u2019s API reports now." +
+                (board === "razed" ? " Razed counts whole UTC days, so this includes wagers placed after 21:00 on the last day." : "") + "</p>", confirm: "Re-record", danger: true })
+            : action === "remove"
+              ? R.confirm({ title: "Remove " + name + " from the site?", html: "<p>Its winners disappear from Past winners. You can record it again later from here.</p>", confirm: "Remove", danger: true })
+              : Promise.resolve(true);
+          ask.then(function (ok) {
+            if (!ok) return;
+            b.disabled = true;
+            return R.api("/api/admin/leaderboards", { board: board, month: month, action: action }).then(function (d2) {
+              R.toast(action === "remove" ? "Removed." : "Recorded.");
+              render(d2);
+            });
+          }).catch(function (err) { b.disabled = false; fail(err); });
+        });
+      });
+    }
+  };
+
   /* ---------------- points ---------------- */
 
   var pointsName = "";

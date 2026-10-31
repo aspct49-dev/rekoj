@@ -7,8 +7,8 @@
   <!-- Logged in last time? Keep LOGIN hidden from the first frame (the header fills in the account chip) -->
   <script>try{localStorage.getItem("rekoj-account")&&document.documentElement.classList.add("has-account")}catch(e){}</script>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>RekoJ Leaderboard | $3,000 Monthly on Razed &amp; Razed.IO</title>
-  <meta name="description" content="Play under code REKOJ and climb the monthly leaderboard: $3,000 across 10 places on Razed, $500 across 5 on Razed.IO. Live standings and countdown." />
+  <title>RekoJ Leaderboard | $5,000 Monthly on Razed &amp; Razed.IO</title>
+  <meta name="description" content="Play under code REKOJ and climb the monthly leaderboard: $5,000 across 10 places on Razed, $500 across 5 on Razed.IO. Live standings and countdown." />
   <link rel="canonical" href="https://rekoj.org/leaderboard" />
   <meta name="theme-color" content="#0d1015" />
   <meta name="robots" content="index, follow, max-image-preview:large" />
@@ -16,8 +16,8 @@
   <meta property="og:type" content="website" />
   <meta property="og:site_name" content="RekoJ" />
   <meta property="og:locale" content="en_US" />
-  <meta property="og:title" content="RekoJ Leaderboard | $3,000 Monthly on Razed &amp; Razed.IO" />
-  <meta property="og:description" content="Play under code REKOJ and climb the monthly leaderboard: $3,000 across 10 places on Razed, $500 across 5 on Razed.IO. Live standings and countdown." />
+  <meta property="og:title" content="RekoJ Leaderboard | $5,000 Monthly on Razed &amp; Razed.IO" />
+  <meta property="og:description" content="Play under code REKOJ and climb the monthly leaderboard: $5,000 across 10 places on Razed, $500 across 5 on Razed.IO. Live standings and countdown." />
   <meta property="og:url" content="https://rekoj.org/leaderboard" />
   <meta property="og:image:type" content="image/png" />
   <meta property="og:image" content="https://rekoj.org/assets/shared/og-image.png" />
@@ -128,10 +128,10 @@
             </button>
           </div>
 
-          <h1 class="sr-only" id="seoHeading">$3,000 monthly leaderboard for Razed and Razed.IO players under code REKOJ</h1>
+          <h1 class="sr-only" id="seoHeading">$5,000 monthly leaderboard for Razed and Razed.IO players under code REKOJ</h1>
 
           <div class="title__text">
-            <p class="title__pool"><span class="title__amount" id="prizePool">$5,000</span> <span class="title__monthly">MONTHLY</span></p>
+            <p class="title__pool"><span class="title__amount" id="prizePool">$5,000</span> <span class="title__monthly" id="poolMonthly">MONTHLY</span></p>
             <p class="title__lb">LEADERBOARD</p>
             <p class="title__sub">Compete against other players under code <span class="accent" data-code>REKOJ</span> and win big rewards!</p>
           </div>
@@ -158,6 +158,9 @@
         <section class="timer" aria-live="off">
           <div class="timer__label">LEADERBOARD ENDS IN</div>
           <p class="timer__value" id="countdown"><b data-t="d">00</b> DAYS  <b data-t="h">00</b> HOURS  <b data-t="m">00</b> MINUTES  <b data-t="s">00</b> SECONDS</p>
+          <p class="timer__ends" id="timerEnds"></p>
+          <div class="lb-pills" id="lbPills"></div>
+          <p class="lb-notice" id="lbNotice" role="status" hidden></p>
         </section>
 
         <!-- Places 4-10 -->

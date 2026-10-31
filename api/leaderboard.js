@@ -15,15 +15,16 @@
  *   <BOARD>_REFERRAL_CODE  optional, overrides the code from data.js
  *
  * The two casinos run different APIs, so each board names a flavour in
- * data.js (`apiFlavor`) and FLAVOURS below holds everything specific to it:
- * the endpoint, the auth header, how the window is expressed, and how a row
- * is read.
+ * data.js (`apiFlavor`), and server/leaderboards.js holds everything specific
+ * to it: the endpoint, the auth header, how the window is expressed, and how
+ * a row is read. That's also where each finished month's winners are kept.
  */
 
 const CONFIG = require("../data.js").REKOJ_CONFIG;
+const boards = require("../server/leaderboards");
 
-const REQUEST_TIMEOUT_MS = 8000;
 const FRESH_MS = 60 * 1000; // both APIs cache for a minute anyway
+const CLOSING_FRESH_MS = 15 * 1000;
 
 // Last good answer per board, kept for as long as this instance is warm.
 // Razed.IO allows one request per second, so a burst of visitors would
@@ -33,97 +34,19 @@ const lastGood = new Map();
 // One upstream request per board at a time; concurrent visitors share it.
 const inflight = new Map();
 
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
 function send(res, status, payload, cacheControl) {
   if (cacheControl) res.setHeader("Cache-Control", cacheControl);
   res.statusCode = status;
   return res.end(JSON.stringify(payload));
 }
 
-function sendStale(res, key, reason) {
+function sendStale(res, key, reason, month) {
   const hit = lastGood.get(key);
-  if (!hit) return false;
+  if (!hit || hit.payload.month !== month) return false;
   console.warn("[leaderboard] %s %s; serving standings from %ss ago", key, reason, Math.round((Date.now() - hit.at) / 1000));
   res.setHeader("X-Leaderboard-Stale", "1");
   send(res, 200, hit.payload, "public, s-maxage=15, stale-while-revalidate=300");
   return true;
-}
-
-/** First value present under any of `keys`. */
-function pick(row, keys) {
-  for (const key of keys) {
-    if (row[key] !== undefined && row[key] !== null && row[key] !== "") return row[key];
-  }
-  return undefined;
-}
-
-/**
- * Field names are read loosely on purpose: a rename upstream should cost a
- * field, not the whole board.
- *
- * Avatars are deliberately not taken from the API, even where it offers them
- * (Razed.IO does): every place shows the character it has in the design, so
- * the boards look the same as each other and as the Figma file.
- */
-function commonRow(row) {
-  return {
-    name: pick(row, ["masked_username", "maskedUsername", "username", "name", "player", "nickname"]),
-    wagered: Number(
-      pick(row, ["wagered", "wager", "wagered_amount", "total_wagered", "totalWagered", "amount", "turnover"])
-    ) || 0,
-  };
-}
-
-const FLAVOURS = {
-  /*
-   * razed.com — GET /player/api/v1/referrals/leaderboard
-   *   ?referral_code=rekoj&from=2026-09-20&to=2026-10-31&top=10
-   * Note the singular `referral_code`; the plural form 404s. `to` is
-   * exclusive (from=to answers nothing), so the day after the period's last
-   * day is sent. Answers with
-   *   { total, from, to, data: [ { username, referred_by_code, wagered } ] }
-   */
-  razed: {
-    url: "https://api.razed.com/player/api/v1/referrals/leaderboard",
-    keyEnv: ["REFERRAL_KEY", "API_KEY"],
-    header: "X-Referral-Key",
-    params(url, { code, period, places }) {
-      url.searchParams.set("referral_code", code);
-      if (period.from) url.searchParams.set("from", period.from);
-      if (period.to) url.searchParams.set("to", new Date(Date.parse(period.to + "T00:00:00Z") + 86400000).toISOString().slice(0, 10));
-      url.searchParams.set("top", String(places));
-    },
-    rows: (json) => (Array.isArray(json) ? json : (json && json.data) || []),
-    row: commonRow,
-  },
-
-  /*
-   * razed.io — GET /externals/affiliates
-   *   ?codes=rekoj&startDate=2026-09-20T00:00:00Z&endDate=2026-10-31T23:59:59Z
-   * Answers with a bare array of
-   *   { id, username, avatar, wagered, deposited, stillUnderCode }
-   * Dates need an explicit offset, amounts are decimal strings, and players
-   * who have since moved to another code come back with stillUnderCode:false
-   * (their wagering under this code still counts, so they are kept).
-   */
-  razedio: {
-    url: "https://api.razed.io/externals/affiliates",
-    keyEnv: ["API_KEY", "REFERRAL_KEY"],
-    header: "x-api-key",
-    params(url, { code, period }) {
-      url.searchParams.set("codes", code);
-      if (period.from) url.searchParams.set("startDate", period.from + "T00:00:00Z");
-      if (period.to) url.searchParams.set("endDate", period.to + "T23:59:59Z");
-    },
-    rows: (json) => (Array.isArray(json) ? json : (json && json.data) || []),
-    row: commonRow,
-  },
-};
-
-/** Envvar prefix per board: razed -> RAZED_, razedio -> RAZEDIO_ */
-function envPrefix(board) {
-  return board.toUpperCase().replace(/[^A-Z0-9]/g, "") + "_";
 }
 
 module.exports = async function handler(req, res) {
@@ -136,96 +59,46 @@ module.exports = async function handler(req, res) {
     res.statusCode = 400;
     return res.end(JSON.stringify({ error: "Unknown board" }));
   }
-
-  const flavour = FLAVOURS[board.apiFlavor || key];
-  if (!flavour) {
+  if (!boards.flavourOf(key)) {
     res.statusCode = 500;
     return res.end(JSON.stringify({ error: "No API flavour for " + key }));
   }
-
-  const prefix = envPrefix(key);
-  const secret = flavour.keyEnv.map((name) => process.env[prefix + name]).find(Boolean);
-  if (!secret) {
+  if (!boards.secretOf(key)) {
     // No key configured: let the page fall back to the entries in data.js.
     res.statusCode = 503;
     return res.end(JSON.stringify({ error: "Leaderboard key not configured for " + key }));
   }
 
-  const places = board.places || 10;
-  const period = board.period || {};
-  const code = process.env[prefix + "REFERRAL_CODE"] || board.referralCode || CONFIG.code.toLowerCase();
+  const now = Date.now();
+  const season = CONFIG.season(key, now);
+  // Last month ended? Keep its winners (a no-op once they're kept).
+  await boards.ensure(key, now).catch(() => {});
+
+  // Close to the end, look again more often so the final standings are recent.
+  const closing = season.end - now <= boards.SNAPSHOT_FROM;
+  const fresh = closing ? CLOSING_FRESH_MS : FRESH_MS;
+  const edge = closing ? "public, s-maxage=15" : "public, s-maxage=60, stale-while-revalidate=300";
 
   const cached = lastGood.get(key);
-  if (cached && Date.now() - cached.at < FRESH_MS) {
-    return send(res, 200, cached.payload, "public, s-maxage=60, stale-while-revalidate=300");
+  if (cached && cached.payload.month === season.id && now - cached.at < fresh) {
+    return send(res, 200, cached.payload, edge);
   }
-
-  const url = new URL(process.env[prefix + "API_URL"] || flavour.url);
-  flavour.params(url, { code, period, places });
-
-  const abort = new AbortController();
-  const timer = setTimeout(() => abort.abort(), REQUEST_TIMEOUT_MS);
-  const request = () => fetch(url, {
-    headers: { [flavour.header]: secret, Accept: "application/json" },
-    signal: abort.signal,
-  });
-
-  const fetchOnce = async () => {
-    let r = await request();
-    if (r.status === 429) {
-      // Rate limited (Razed.IO: 1 request/second). Wait it out once.
-      await sleep(1100);
-      r = await request();
-    }
-    return { ok: r.ok, status: r.status, body: await r.text() };
-  };
 
   try {
     let shared = inflight.get(key);
-    if (!shared) {
-      shared = fetchOnce().finally(() => inflight.delete(key));
+    if (!shared || shared.month !== season.id) {
+      shared = boards.fetchStandings(key, season).finally(() => { if (inflight.get(key) === shared) inflight.delete(key); });
+      shared.month = season.id;
       inflight.set(key, shared);
     }
-    const upstream = await shared;
-    const body = upstream.body;
-
-    if (!upstream.ok) {
-      // Report the status, never the key or the full request URL.
-      console.error("[leaderboard] %s upstream %s: %s", key, upstream.status, body.slice(0, 300));
-      if (sendStale(res, key, "upstream " + upstream.status)) return;
-      return send(res, 502, { error: "Upstream error", status: upstream.status });
-    }
-
-    let json;
-    try {
-      json = JSON.parse(body);
-    } catch (err) {
-      if (sendStale(res, key, "upstream sent non-JSON")) return;
-      return send(res, 502, { error: "Upstream did not return JSON" });
-    }
-
-    // Razed.IO returns everyone who clicked the code, including players who
-    // have wagered nothing; they would otherwise sit in a paying place ahead
-    // of an empty slot, so only actual wagering makes the board.
-    const entries = flavour
-      .rows(json)
-      .map(flavour.row)
-      .filter((entry) => entry.name && entry.wagered > 0)
-      .map((entry) => ({ ...entry, name: String(entry.name) }))
-      .sort((a, b) => b.wagered - a.wagered)
-      .slice(0, places);
-
-    const payload = { board: key, from: period.from, to: period.to, entries };
+    const entries = await shared;
+    const payload = { board: key, month: season.id, from: season.firstDay, ends: new Date(season.end).toISOString(), entries };
     lastGood.set(key, { at: Date.now(), payload });
-
-    // Cached at the edge for a minute, which is also how long both APIs cache.
-    return send(res, 200, payload, "public, s-maxage=60, stale-while-revalidate=300");
+    // The last 15 minutes: keep what the board shows, for the final result.
+    await boards.noteLive(key, season, entries).catch((err) => console.error("[leaderboard] couldn't save the standings:", err.message));
+    return send(res, 200, payload, edge);
   } catch (err) {
-    const reason = err && err.name === "AbortError" ? "Upstream timed out" : "Upstream unreachable";
-    console.error("[leaderboard] %s %s", key, reason);
-    if (sendStale(res, key, reason)) return;
-    return send(res, 504, { error: reason });
-  } finally {
-    clearTimeout(timer);
+    if (sendStale(res, key, err.message, season.id)) return;
+    return send(res, err.status || 502, { error: err.message });
   }
 };

@@ -7,6 +7,7 @@
 
   var R = window.Rekoj;
   var board = R.config.boards.razed;
+  var month = R.config.season("razed");
 
   // Card art and gift icons exported for the teaser; avatars as on the board.
   var BOX = {
@@ -26,9 +27,9 @@
   }
 
   function renderPool() {
-    // "$3,000" with the comma set smaller, as in the design.
+    // "$5,000" with the comma set smaller, as in the design.
     var el = document.getElementById("teaserPool");
-    el.innerHTML = R.esc(board.prizePool).replace(/,/g, '<span class="teaser__comma">,</span>');
+    el.innerHTML = R.esc(R.config.poolText(month)).replace(/,/g, '<span class="teaser__comma">,</span>');
   }
 
   function renderCards(entries) {
@@ -44,7 +45,7 @@
             box: BOX[place],
             gift: GIFT[place],
             avatar: avatarFor(place, e),
-            prize: e.prize != null ? e.prize : (board.prizes || [])[place - 1] || 0,
+            prize: e.prize != null ? e.prize : month.prizes[place - 1] || 0,
             lazy: true,
           }) +
         "</div>";

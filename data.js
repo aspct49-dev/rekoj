@@ -4,30 +4,38 @@
  * This is the single source of truth for both the page and the serverless
  * function in api/leaderboard.js, so periods and prizes can never drift apart.
  *
- * period.from / period.to  the days the board counts, inclusive, in UTC. Sent
- *                          to the affiliate API as its `from` / `to` dates.
- * endsAt                   when the countdown hits zero. Always UTC: write it
- *                          with a trailing Z, e.g. the instant 31 Oct ends is
- *                          "2026-11-01T00:00:00Z".
- * places                   how many places the board pays and shows.
- * prizes                   prize per place, 1st first. Must match `places`.
- * entries                  shown when the API is unreachable (local preview).
+ * Every board runs monthly and ends on the month's last day at
+ * schedule.endHour in schedule.timeZone (21:00 Paris time: CET in winter,
+ * CEST in summer). The next month starts the moment the last one ends, so
+ * nothing needs editing month to month. season(board, at) works out the
+ * month running at `at`.
+ *
+ * prizes    prize per place, 1st first, for every month (its length is how
+ *           many places the board pays and shows).
+ * months    months that differ from the usual: { "2026-10": { from, prizes } }.
+ *           `from` is the UTC day it started counting. Old months stay listed
+ *           so their past winners show the prizes they had.
+ * entries   shown when the API is unreachable (local preview).
+ *
+ * Razed counts whole UTC days, so a Razed month counts from the first UTC
+ * midnight after the last one ended; Razed.IO counts to the second.
  */
 (function (root) {
   root.REKOJ_CONFIG = {
     code: "REKOJ",
     defaultBoard: "razed",
     maskNames: true,
+    // firstMonth: the first month whose winners are kept (Past winners)
+    schedule: { timeZone: "Europe/Paris", endHour: 21, firstMonth: "2026-10" },
 
     boards: {
       razed: {
         name: "Razed",
-        prizePool: "$3,000",
         visitUrl: "https://www.razed.com/signup/?raf=rekoj",
-        places: 10,
-        prizes: [1500, 750, 200, 150, 125, 100, 75, 50, 30, 20],
-        period: { from: "2026-09-20", to: "2026-10-31" },
-        endsAt: "2026-11-01T00:00:00Z",
+        prizes: [2500, 1250, 500, 200, 175, 140, 100, 65, 45, 25],
+        months: {
+          "2026-10": { from: "2026-09-20", prizes: [1500, 750, 200, 150, 125, 100, 75, 50, 30, 20] },
+        },
         apiUrl: "/api/leaderboard?board=razed",
         apiFlavor: "razed",
         referralCode: "rekoj",
@@ -66,12 +74,11 @@
 
       razedio: {
         name: "Razed.IO",
-        prizePool: "$500.00",
         visitUrl: "https://razed.io/?referralCode=rekoj",
-        places: 5,
         prizes: [250, 125, 60, 40, 25],
-        period: { from: "2026-09-20", to: "2026-10-31" },
-        endsAt: "2026-11-01T00:00:00Z",
+        months: {
+          "2026-10": { from: "2026-09-20" },
+        },
         // Razed.IO has its own API (see api/leaderboard.js) and needs
         // RAZEDIO_API_KEY set; without it the page falls back to `entries`.
         apiUrl: "/api/leaderboard?board=razedio",
@@ -104,4 +111,61 @@
       },
     },
   };
+
+  /* ---------------- the monthly schedule ---------------- */
+
+  var C = root.REKOJ_CONFIG;
+  var DAY = 86400000;
+
+  // How far `zone` is ahead of UTC at instant `at`, in ms.
+  function zoneOffset(at, zone) {
+    var p = {};
+    new Intl.DateTimeFormat("en-US", {
+      timeZone: zone, hourCycle: "h23", year: "numeric", month: "numeric", day: "numeric",
+      hour: "numeric", minute: "numeric", second: "numeric",
+    }).formatToParts(at).forEach(function (x) { p[x.type] = x.value; });
+    return Date.UTC(+p.year, +p.month - 1, +p.day, +p.hour, +p.minute, +p.second) - Math.floor(at / 1000) * 1000;
+  }
+
+  // When month `m` (0-11) of year `y` ends: its last day at endHour, local time.
+  function monthEnd(y, m) {
+    var s = C.schedule, last = new Date(Date.UTC(y, m + 1, 0)).getUTCDate();
+    var wall = Date.UTC(y, m, last, s.endHour), at = wall;
+    for (var i = 0; i < 2; i++) at = wall - zoneOffset(at, s.timeZone); // twice: settles across a clock change
+    return at;
+  }
+
+  /** One board's month: { id: "2026-11", name, board, start, end, prizes, places, pool, from? } */
+  function month(key, id) {
+    var board = C.boards[key], y = +id.slice(0, 4), m = +id.slice(5, 7) - 1;
+    var over = (board.months || {})[id] || {};
+    var prizes = over.prizes || board.prizes;
+    var start = over.from ? Date.parse(over.from + "T00:00:00Z") : monthEnd(y, m - 1);
+    return {
+      id: id, board: key,
+      name: new Date(Date.UTC(y, m, 15)).toLocaleString("en-US", { month: "long", year: "numeric", timeZone: "UTC" }),
+      start: start, end: monthEnd(y, m),
+      // Razed's first whole UTC day (a month that starts at 21:00 counts from the next midnight)
+      firstDay: new Date(Math.ceil(start / DAY) * DAY).toISOString().slice(0, 10),
+      prizes: prizes, places: prizes.length,
+      pool: prizes.reduce(function (a, b) { return a + b; }, 0),
+    };
+  }
+
+  /** The month running at `at` (default now). */
+  C.season = function (key, at) {
+    at = at == null ? Date.now() : at;
+    var p = {};
+    new Intl.DateTimeFormat("en-US", { timeZone: C.schedule.timeZone, year: "numeric", month: "numeric" })
+      .formatToParts(at).forEach(function (x) { p[x.type] = x.value; });
+    var y = +p.year, m = +p.month - 1;
+    if (at >= monthEnd(y, m)) { m++; if (m > 11) { m = 0; y++; } }
+    return month(key, y + "-" + (m < 9 ? "0" : "") + (m + 1));
+  };
+  /** A month by id ("2026-10"). */
+  C.month = month;
+  /** The month before `s`. */
+  C.previous = function (s) { return C.season(s.board, s.start - 1); };
+  /** "$5,000" */
+  C.poolText = function (s) { return "$" + s.pool.toLocaleString("en-US"); };
 })(typeof window !== "undefined" ? window : (typeof module !== "undefined" ? (module.exports = {}) : this));

@@ -162,22 +162,28 @@
   /* ---------------- leaderboard data ---------------- */
 
   /** Entries for a board from its API, falling back to data.js. */
+  // This month's standings. The month is in the URL so a cached answer from
+  // last month is never reused once a new one starts; a new month with no
+  // wagers yet shows empty places, not the sample rows.
   function loadBoard(key) {
     var board = config.boards && config.boards[key];
     if (!board) return Promise.resolve([]);
     if (!board.apiUrl) return Promise.resolve(board.entries || []);
-    return fetch(board.apiUrl, { headers: { Accept: "application/json" } })
+    var month = config.season ? config.season(key).id : "";
+    return fetch(board.apiUrl + (month ? "&month=" + month : ""), { headers: { Accept: "application/json" } })
       .then(function (res) {
         if (!res.ok) throw new Error("HTTP " + res.status);
         return res.json();
       })
       .then(function (json) {
-        var entries = Array.isArray(json) ? json : json.entries || [];
-        return entries.length ? entries : board.entries || [];
+        if (json && json.month && month && json.month !== month) return [];
+        return Array.isArray(json) ? json : json.entries || [];
       })
       .catch(function (err) {
-        console.warn("[rekoj] Failed to load " + key + " leaderboard, using static data.", err);
-        return board.entries || [];
+        // The sample rows are for previewing locally; on the site, show empty places
+        var local = /^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+        console.warn("[rekoj] Failed to load " + key + " leaderboard" + (local ? ", using sample data." : "."), err);
+        return local ? board.entries || [] : [];
       });
   }
 

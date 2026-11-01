@@ -48,10 +48,8 @@ const isoDay = (ms) => new Date(ms).toISOString().slice(0, 10);
 function secret(casino) {
   return CASINOS[casino].keyEnv.map((k) => process.env[k]).find(Boolean) || null;
 }
-function code(casino) {
-  const board = CONFIG.boards[casino] || {};
-  return process.env[casino.toUpperCase() + "_REFERRAL_CODE"] || board.referralCode || CONFIG.code.toLowerCase();
-}
+/** Every affiliate code counted for a casino (data.js: referralCode + extraCodes). */
+function codes(casino) { return CONFIG.codes(casino, process.env); }
 function configured(casino) { return !!(CASINOS[casino] && secret(casino)); }
 
 /**
@@ -122,23 +120,25 @@ async function fetchRazed(fromMs, toMs) {
   const w = razedDays(fromMs, toMs);
   const base = process.env.RAZED_API_URL || CASINOS.razed.url;
   const map = new Map();
-  for (let page = 1, last = 1; page <= last && page <= 50; page++) {
-    const url = new URL(base);
-    url.searchParams.set("referral_code", code("razed"));
-    url.searchParams.set("from", w.from);
-    url.searchParams.set("to", w.to);
-    url.searchParams.set("top", "100");
-    url.searchParams.set("page", String(page));
-    const json = await inLane("razed", () => call("razed", url));
-    readRows(json).forEach((r) => addRow(map, r));
-    last = Number(json && json.last_page) || 1;
+  for (const code of codes("razed")) {
+    for (let page = 1, last = 1; page <= last && page <= 50; page++) {
+      const url = new URL(base);
+      url.searchParams.set("referral_code", code);
+      url.searchParams.set("from", w.from);
+      url.searchParams.set("to", w.to);
+      url.searchParams.set("top", "100");
+      url.searchParams.set("page", String(page));
+      const json = await inLane("razed", () => call("razed", url));
+      readRows(json).forEach((r) => addRow(map, r));
+      last = Number(json && json.last_page) || 1;
+    }
   }
   return map;
 }
 
 async function fetchRazedio(fromMs, toMs) {
   const url = new URL(process.env.RAZEDIO_API_URL || CASINOS.razedio.url);
-  url.searchParams.set("codes", code("razedio"));
+  url.searchParams.set("codes", codes("razedio").join(","));
   url.searchParams.set("startDate", new Date(fromMs).toISOString().replace(/\.\d{3}Z$/, "Z"));
   url.searchParams.set("endDate", new Date(toMs).toISOString().replace(/\.\d{3}Z$/, "Z"));
   const map = new Map();

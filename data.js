@@ -16,6 +16,9 @@
  *           `from` is the UTC day it started counting. Old months stay listed
  *           so their past winners show the prizes they had.
  * entries   shown when the API is unreachable (local preview).
+ * extraCodes  other affiliate codes whose players count too (wager raffles,
+ *           wager points and link checks included). Spelled as the casino
+ *           has them: Razed only knows "TSHH" in capitals.
  *
  * Razed.IO counts to the second. Razed counts whole UTC days, so a Razed
  * month counts from the first UTC midnight after the last one ended, plus
@@ -41,6 +44,7 @@
         apiUrl: "/api/leaderboard?board=razed",
         apiFlavor: "razed",
         referralCode: "rekoj",
+        extraCodes: ["TSHH"],
         assets: {
           bg: "assets/razed/bg.webp",
           visitLogo: "assets/razed/visit-logo-dark.webp",
@@ -168,6 +172,16 @@
   C.month = month;
   /** The month before `s`. */
   C.previous = function (s) { return C.season(s.board, s.start - 1); };
+  /**
+   * Every affiliate code counted for a board: its own, then extraCodes.
+   * <BOARD>_REFERRAL_CODE (comma-separated) replaces the list.
+   */
+  C.codes = function (key, env) {
+    var board = C.boards[key] || {};
+    var over = env && env[key.toUpperCase().replace(/[^A-Z0-9]/g, "") + "_REFERRAL_CODE"];
+    if (over) return String(over).split(",").map(function (c) { return c.trim(); }).filter(Boolean);
+    return [board.referralCode || C.code.toLowerCase()].concat(board.extraCodes || []);
+  };
   /** "$5,000" */
   C.poolText = function (s) { return "$" + s.pool.toLocaleString("en-US"); };
 })(typeof window !== "undefined" ? window : (typeof module !== "undefined" ? (module.exports = {}) : this));

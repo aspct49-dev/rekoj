@@ -125,13 +125,12 @@ class StandingsError extends Error {
 }
 
 /** One request to a board's API, set up by setParams(url, code): [{ name, wagered }] with wagering only. */
-async function requestRows(key, setParams) {
-  const board = CONFIG.boards[key];
+async function requestRows(key, setParams, code) {
   const flavour = flavourOf(key);
   const secret = secretOf(key);
   if (!flavour) throw new StandingsError("No API flavour for " + key, 500);
   if (!secret) throw new StandingsError("Leaderboard key not configured for " + key, 503);
-  const code = process.env[envPrefix(key) + "REFERRAL_CODE"] || board.referralCode || CONFIG.code.toLowerCase();
+  code = code || CONFIG.codes(key, process.env)[0];
   const url = new URL(process.env[envPrefix(key) + "API_URL"] || flavour.url);
   setParams(url, code, flavour);
 
@@ -169,20 +168,22 @@ async function requestRows(key, setParams) {
 
 const top = (rows, places) => rows.sort((a, b) => b.wagered - a.wagered).slice(0, places);
 
-/** Everyone's Razed total over whole UTC days [from, to): { name: wagered }. */
+/** Everyone's Razed total over whole UTC days [from, to), every code added up: { name: wagered }. */
 async function razedTotals(from, to) {
   const out = {};
-  for (let page = 1; page <= 20; page++) {
-    const rows = await requestRows("razed", (url, code) => {
-      url.searchParams.set("referral_code", code);
-      url.searchParams.set("from", from);
-      url.searchParams.set("to", to);
-      url.searchParams.set("top", "100");
-      url.searchParams.set("page", String(page));
-    });
-    rows.forEach((r) => { out[r.name] = (out[r.name] || 0) + r.wagered; });
-    if (rows.length < 100) break;
-    await sleep(300);
+  for (const code of CONFIG.codes("razed", process.env)) {
+    for (let page = 1; page <= 20; page++) {
+      const rows = await requestRows("razed", (url) => {
+        url.searchParams.set("referral_code", code);
+        url.searchParams.set("from", from);
+        url.searchParams.set("to", to);
+        url.searchParams.set("top", "100");
+        url.searchParams.set("page", String(page));
+      }, code);
+      rows.forEach((r) => { out[r.name] = (out[r.name] || 0) + r.wagered; });
+      if (rows.length < 100) break;
+      await sleep(300);
+    }
   }
   return out;
 }
@@ -235,18 +236,19 @@ async function carryFor(season) {
 
 /** The month's top places, most wagered first: [{ name, wagered }]. */
 async function fetchStandings(key, season) {
-  if (hasCarry(key, season)) {
-    // From the first UTC midnight (if it has passed), plus the evening before it
+  if (key === "razed") {
+    // Every code's players; from the first UTC midnight (if it has passed),
+    // plus the evening before it when the month started at 21:00
     const [month, carry] = await Promise.all([
       Date.now() < midnight(season.firstDay) ? {} : razedTotals(season.firstDay, isoDay(Math.floor(season.end / DAY) * DAY + DAY)),
-      carryFor(season),
+      hasCarry(key, season) ? carryFor(season) : {},
     ]);
     const sum = Object.assign({}, month);
     for (const [name, c] of Object.entries(carry)) sum[name] = (sum[name] || 0) + c;
     return top(Object.entries(sum).map(([name, wagered]) => ({ name, wagered })), season.places);
   }
   const flavour = flavourOf(key);
-  const rows = await requestRows(key, (url, code) => flavour.params(url, { code, season }));
+  const rows = await requestRows(key, (url) => flavour.params(url, { code: CONFIG.codes(key, process.env).join(","), season }));
   return top(rows, season.places);
 }
 

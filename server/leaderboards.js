@@ -19,6 +19,15 @@
  * daily cron, or from the admin panel (which can also re-record or remove a
  * month). The names stay in full for the admin panel; the public list is
  * masked.
+ *
+ * The next month starts the moment the last one ends, on Razed too: a Razed
+ * month counts from the next UTC midnight, plus each player's "carry", what
+ * they wagered on the last day after 21:00. At the end the live board also
+ * saves everyone's total for that day (leaderboardLive.razedDay), so the
+ * carry is that day's final total minus what they had at 21:00. Without that
+ * capture, the carry is worked out for the top places kept at the end (their
+ * month total now minus the kept one). Once the day is over the carry is
+ * fixed and saved (leaderboardCarry).
  */
 const CONFIG = require("../data.js").REKOJ_CONFIG;
 const store = require("./store");
@@ -115,20 +124,16 @@ class StandingsError extends Error {
   constructor(message, status) { super(message); this.status = status || 502; }
 }
 
-/** The month's top places, most wagered first: [{ name, wagered }]. */
-async function fetchStandings(key, season) {
+/** One request to a board's API, set up by setParams(url, code): [{ name, wagered }] with wagering only. */
+async function requestRows(key, setParams) {
   const board = CONFIG.boards[key];
   const flavour = flavourOf(key);
   const secret = secretOf(key);
   if (!flavour) throw new StandingsError("No API flavour for " + key, 500);
   if (!secret) throw new StandingsError("Leaderboard key not configured for " + key, 503);
-  // Between 21:00 on the last day and the next UTC midnight, Razed's month
-  // hasn't started counting yet: nothing to ask for.
-  if ((board.apiFlavor || key) === "razed" && Date.now() < Date.parse(season.firstDay + "T00:00:00Z")) return [];
-
   const code = process.env[envPrefix(key) + "REFERRAL_CODE"] || board.referralCode || CONFIG.code.toLowerCase();
   const url = new URL(process.env[envPrefix(key) + "API_URL"] || flavour.url);
-  flavour.params(url, { code, season });
+  setParams(url, code, flavour);
 
   const abort = new AbortController();
   const timer = setTimeout(() => abort.abort(), TIMEOUT_MS);
@@ -153,9 +158,7 @@ async function fetchStandings(key, season) {
     return flavour.rows(json)
       .map(flavour.row)
       .filter((e) => e.name && e.wagered > 0)
-      .map((e) => ({ name: String(e.name), wagered: e.wagered }))
-      .sort((a, b) => b.wagered - a.wagered)
-      .slice(0, season.places);
+      .map((e) => ({ name: String(e.name), wagered: e.wagered }));
   } catch (err) {
     if (err instanceof StandingsError) throw err;
     throw new StandingsError(err && err.name === "AbortError" ? "Upstream timed out" : "Upstream unreachable", 504);
@@ -164,19 +167,108 @@ async function fetchStandings(key, season) {
   }
 }
 
+const top = (rows, places) => rows.sort((a, b) => b.wagered - a.wagered).slice(0, places);
+
+/** Everyone's Razed total over whole UTC days [from, to): { name: wagered }. */
+async function razedTotals(from, to) {
+  const out = {};
+  for (let page = 1; page <= 20; page++) {
+    const rows = await requestRows("razed", (url, code) => {
+      url.searchParams.set("referral_code", code);
+      url.searchParams.set("from", from);
+      url.searchParams.set("to", to);
+      url.searchParams.set("top", "100");
+      url.searchParams.set("page", String(page));
+    });
+    rows.forEach((r) => { out[r.name] = (out[r.name] || 0) + r.wagered; });
+    if (rows.length < 100) break;
+    await sleep(300);
+  }
+  return out;
+}
+
+const midnight = (day) => Date.parse(day + "T00:00:00Z");
+/** A Razed month that starts mid-day (21:00) has a carry from that day's evening. */
+const hasCarry = (key, season) => key === "razed" && season.start < midnight(season.firstDay);
+
+const carryMemo = new Map();
+
+/** What each player wagered on Razed after the month started, before its first UTC midnight: { name: amount }. */
+async function carryFor(season) {
+  if (carryMemo.has(season.id)) return carryMemo.get(season.id).players;
+  const kept = (await store.read("leaderboardCarry"))[season.id];
+  if (kept) { carryMemo.set(season.id, kept); return kept.players; }
+
+  const now = Date.now(), dayStart = isoDay(season.start);
+  const players = {};
+  let source = "none";
+  const live = (await store.read("leaderboardLive")).razedDay;
+  if (live && live.month === season.id && live.at <= season.start && live.at >= season.start - SNAPSHOT_FINAL) {
+    // Everyone's total for the day at 21:00 was saved: the carry is the rest of the day
+    const day = await razedTotals(dayStart, season.firstDay);
+    for (const [name, total] of Object.entries(day)) {
+      const c = total - (live.players[name] || 0);
+      if (c >= 0.005) players[name] = c;
+    }
+    source = "day";
+  } else {
+    // Only the top places kept at the end: their month total now minus the kept one
+    const prev = CONFIG.previous(season);
+    const rec = (await store.read("leaderboardArchive")).find((r) => r.id === prev.id && r.board === "razed" && r.source === "snapshot" && !r.removed);
+    if (rec) {
+      const totals = await razedTotals(prev.firstDay, season.firstDay);
+      for (const e of rec.entries) {
+        const c = (totals[e.name] || 0) - e.wagered;
+        if (c >= 0.005) players[e.name] = c;
+      }
+      source = "top";
+    }
+  }
+  // Once the day is over (and Razed's totals have settled), the carry is final
+  if (now >= midnight(season.firstDay) + 10 * 60 * 1000) {
+    const rec = { source, players, at: now };
+    await store.update("leaderboardCarry", (d) => { if (!d[season.id]) d[season.id] = rec; });
+    carryMemo.set(season.id, rec);
+  }
+  return players;
+}
+
+/** The month's top places, most wagered first: [{ name, wagered }]. */
+async function fetchStandings(key, season) {
+  if (hasCarry(key, season)) {
+    // From the first UTC midnight (if it has passed), plus the evening before it
+    const [month, carry] = await Promise.all([
+      Date.now() < midnight(season.firstDay) ? {} : razedTotals(season.firstDay, isoDay(Math.floor(season.end / DAY) * DAY + DAY)),
+      carryFor(season),
+    ]);
+    const sum = Object.assign({}, month);
+    for (const [name, c] of Object.entries(carry)) sum[name] = (sum[name] || 0) + c;
+    return top(Object.entries(sum).map(([name, wagered]) => ({ name, wagered })), season.places);
+  }
+  const flavour = flavourOf(key);
+  const rows = await requestRows(key, (url, code) => flavour.params(url, { code, season }));
+  return top(rows, season.places);
+}
+
 /* ---------------------------------------------------------------- recording */
 
 const firstMonth = () => CONFIG.schedule.firstMonth || "0000-00";
 const keyOf = (r) => r.id + "|" + r.board;
 
-/** Called with every fresh live answer: in the last 15 minutes, keep it. */
+/**
+ * Called with every fresh live answer: in the last 15 minutes, keep it. On
+ * Razed, also keep everyone's total for the last day, so the next month can
+ * start at 21:00 exactly (see carryFor).
+ */
 async function noteLive(key, season, entries, now = Date.now()) {
   const left = season.end - now;
   if (left <= 0 || left > SNAPSHOT_FROM) return false;
+  const next = CONFIG.season(key, season.end);
+  const day = hasCarry(key, next) ? await razedTotals(isoDay(next.start), next.firstDay).catch(() => null) : null;
   await store.update("leaderboardLive", (d) => {
     const had = d[key];
-    if (had && had.month === season.id && had.at >= now) return;
-    d[key] = { month: season.id, at: now, entries };
+    if (!(had && had.month === season.id && had.at >= now)) d[key] = { month: season.id, at: now, entries };
+    if (day && !(d.razedDay && d.razedDay.month === next.id && d.razedDay.at >= now)) d.razedDay = { month: next.id, at: now, players: day };
   });
   return true;
 }
@@ -264,7 +356,7 @@ async function publicList() {
 
 /** Everything the admin panel shows: each board's month, its live snapshot, and every record in full. */
 async function adminView(now = Date.now()) {
-  const [list, live] = await Promise.all([store.read("leaderboardArchive"), store.read("leaderboardLive")]);
+  const [list, live, carries] = await Promise.all([store.read("leaderboardArchive"), store.read("leaderboardLive"), store.read("leaderboardCarry")]);
   const boards = Object.keys(CONFIG.boards).map((key) => {
     const cur = CONFIG.season(key, now), prev = CONFIG.previous(cur);
     const snap = live[key];
@@ -276,6 +368,11 @@ async function adminView(now = Date.now()) {
         recorded: list.some((r) => r.id === prev.id && r.board === key && !r.removed),
       },
       snapshot: snap ? { month: snap.month, at: snap.at, places: snap.entries.length } : null,
+      carry: carries[cur.id] && hasCarry(key, cur) ? {
+        source: carries[cur.id].source, from: cur.start,
+        players: Object.keys(carries[cur.id].players).length,
+        total: Object.values(carries[cur.id].players).reduce((a, b) => a + b, 0),
+      } : null,
     };
   });
   return { boards, records: list.filter((r) => !r.removed) };
@@ -303,7 +400,7 @@ function adminRemove(key, id, by) {
 }
 
 module.exports = {
-  FLAVOURS, StandingsError, fetchStandings, secretOf, flavourOf,
+  FLAVOURS, StandingsError, fetchStandings, secretOf, flavourOf, carryFor,
   noteLive, record, ensure, ensureAll, publicList, adminView, adminRecord, adminRemove,
   SNAPSHOT_FROM, SNAPSHOT_FINAL,
 };

@@ -1143,6 +1143,9 @@
             (p.recorded ? '<span class="pill pill--done">Winners kept</span>' : '<span class="pill pill--pending">Not recorded yet</span> ' +
               '<button class="abtn abtn--sm abtn--ok" type="button" data-lb="record" data-board="' + b.key + '" data-month="' + p.id + '">Record now</button>') +
             (snap ? "<br />Last live standings saved " + lbTime(snap.at) : "") + "</p>" : "") +
+          (b.carry ? '<p class="admin-muted">Counts from ' + lbTime(b.carry.from) + ": includes " + b.carry.players + " player" + (b.carry.players === 1 ? "" : "s") +
+            "\u2019 wagers after 21:00 on the last day (" + dollars(Math.round(b.carry.total * 100) / 100) + ")" +
+            (b.carry.source === "top" ? ", worked out for the top places kept at the end" : "") + ".</p>" : "") +
         "</section>";
       }).join("");
 

@@ -17,8 +17,10 @@
  *           so their past winners show the prizes they had.
  * entries   shown when the API is unreachable (local preview).
  *
- * Razed counts whole UTC days, so a Razed month counts from the first UTC
- * midnight after the last one ended; Razed.IO counts to the second.
+ * Razed.IO counts to the second. Razed counts whole UTC days, so a Razed
+ * month counts from the first UTC midnight after the last one ended, plus
+ * what each player wagered between 21:00 and that midnight (worked out in
+ * server/leaderboards.js), so both start the moment the last month ends.
  */
 (function (root) {
   root.REKOJ_CONFIG = {
